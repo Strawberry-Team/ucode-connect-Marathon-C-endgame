@@ -4,4 +4,6 @@
 #include "../resources/framework/raylib/src/raylib.h"
 #include "../resources/framework/raylib/src/raymath.h"
 
+#include <math.h>
+
 #endif

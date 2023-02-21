@@ -9,7 +9,7 @@ macos:
 	clang -framework CoreVideo -framework IOKit -framework Cocoa -framework GLUT -framework OpenGL $(FRAMEWORK_LIB) $(SRC) -o $(NAME)
 
 linux:
-	clang gcc $(SRC) -o $(NAME) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
+	clang $(SRC) -o $(NAME) -lraylib -lGL -lm -lpthread -ldl -lrt -lX11
 
 clean:
 	rm $(NAME)
