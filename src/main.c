@@ -7,7 +7,7 @@
 #include "../inc/main.h"
 
 #define G 400
-#define PLAYER_JUMP_SPD 150.0f
+#define PLAYER_JUMP_SPD 250.0f
 #define PLAYER_HOR_SPD 150.0f
 #define PLAYER_JUMP_LIMIT 2
 
