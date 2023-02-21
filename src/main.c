@@ -3,19 +3,20 @@
 #define G 400
 #define PLAYER_JUMP_SPD 350.0f
 #define PLAYER_HOR_SPD 200.0f
+#define PLAYER_JUMP_LIMIT 2
+
 const int screenWidth = 600;
 const int screenHeight = 800;
 
-typedef struct Player
-{
+typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
+    int jumpCounter;
 } Player;
 
 typedef struct EnvItem
 {
-
     Rectangle rect;
     int blocking;
     bool moving;
@@ -37,7 +38,7 @@ int main(void)
     // Initialization
     //--------------------------------------------------------------------------------------
 
-    InitWindow(screenWidth, screenHeight, "raylib [core] example - 2d camera");
+    InitWindow(screenWidth, screenHeight, "Endgame");
 
     Player player = {0};
     player.position = (Vector2){300, 800};
@@ -153,10 +154,11 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         player->position.x += PLAYER_HOR_SPD * delta;
     if (player->position.x + playerRect.width >= screenWidth)
         player->position.x = screenWidth - playerRect.width;
-    if (IsKeyDown(KEY_SPACE) && player->canJump)
+    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT)
     {
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
+        player->jumpCounter += 1;
     }
 
     int hitObstacle = 0;
@@ -188,10 +190,16 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     {
         player->position.y += player->speed * delta;
         player->speed += G * delta;
-        player->canJump = false;
+        if (player->jumpCounter < PLAYER_JUMP_LIMIT) {
+            player->canJump = true;
+        } else {
+            player->canJump = false;
+        }
     }
-    else
+    else {
         player->canJump = true;
+        player->jumpCounter = 0;
+    }
 }
 
 void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height)
