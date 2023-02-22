@@ -1,43 +1,16 @@
 
 #include "../inc/main.h"
-#define G 400
-#define PLAYER_JUMP_SPD 350.0f
-#define PLAYER_HOR_SPD 200.0f
+
+#define G 680
+#define PLAYER_JUMP_SPD 320.0f
+#define PLAYER_HOR_SPD 220.0f
 #define PLAYER_JUMP_LIMIT 2
 #define LAVA_SPEED 25
+#define LAVA_SPEED_MULTIPLIER 1.3
 
 const int screenWidth = 600;
 const int screenHeight = 800;
 
-typedef struct Player
-{
-    Vector2 position;
-    float speed;
-    bool canJump;
-    int jumpCounter;
-} Player;
-
-typedef struct Move
-{
-    bool moving;
-    int speed;
-} Move;
-
-typedef struct EnvItem
-{
-    Rectangle rect;
-    Move if_dynamic;
-    int blocking;
-    bool destroy;
-    int destroy_time;
-    Color color;
-} EnvItem;
-//----------------------------------------------------------------------------------
-// Module functions declaration
-//----------------------------------------------------------------------------------
-void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
-void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
-void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -48,10 +21,11 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Endgame");
 
-    Rectangle lava = {0, 1000, 600, 1000};
+    Rectangle lava = { 0, 1000, 600, 1000 };
 
     float deltaTime = 0.0f;
     float lastFrameTime = GetTime();
+    int lavaSpeedMultiplier = 1;
 
     Player player = {0};
     player.position = (Vector2){300, 800};
@@ -68,19 +42,22 @@ int main(void)
         {{0, 0, 0, 0}, {false, 0}, 0, false, 0, GRAY}};
     bool pause = false;
     int envItemsLength = sizeof(envItems) / sizeof(envItems[0]) - 1;
-    int envItems_speed = 2;
     Camera2D camera = {0};
     camera.target = player.position;
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
     camera.zoom = 1.0f;
     int framesCounter = 0;
-    // Store pointers to the multiple update camera functions
-    void (*cameraUpdaters[])(Camera2D *, Player *, EnvItem *, int, float, int, int) = {
-        UpdateCameraCenterInsideMap};
 
-    int cameraOption = 0;
-    int cameraUpdatersLength = sizeof(cameraUpdaters) / sizeof(cameraUpdaters[0]);
+
+    EventCheckPoint eventCheckPoint = { 0 };
+    eventCheckPoint.rect = (Rectangle) {0, 500, screenWidth, 20};
+    eventCheckPoint.color = BLUE;
+    eventCheckPoint.isActive = true;
+    eventCheckPoint.eventType = INCREASE_LAVA_SPEED;
+
+    EventCheckPoint events[] = {eventCheckPoint};
+    int eventsLength = sizeof(events) / sizeof(events[0]);
 
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------
@@ -92,34 +69,38 @@ int main(void)
         float currentFrameTime = GetTime();
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
-        // variables for bricks
-        bool destroy = false;
-        int index;
+
         // Update the position of the lava object
-        lava.y -= LAVA_SPEED * deltaTime;
+        lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
+
+        Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
+
+        for (int i = 0; i < eventsLength; i++) {
+            int isCollision = CheckCollisionRecs(playerRect, events[i].rect);
+            //TraceLog(LOG_INFO, "Collision: [%d]; ScreenWith: [%d]", test, GetScreenWidth());
+            if (isCollision && events[i].eventType == INCREASE_LAVA_SPEED && events[i].isActive) {
+                lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
+                events[i].isActive = false;
+            }
+        }
 
         float deltaTime = GetFrameTime();
-        
+        bool destroy = false;
+        int index;
+
         UpdateBricks(envItems, envItemsLength, pause);
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime, &destroy, &index);
-        if (destroy)
-        {
+        if (destroy) {
             framesCounter++;
         }
-        if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true)
-        {
+
+        if ((((framesCounter / 180) % 3) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[5];
             framesCounter = 0;
         }
-        if (envItems[index].destroy_time == 1 && envItems[index].destroy && (((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 0))
-        {
-            envItems[index] = envItems[5];
-            framesCounter = 0;
-        }
-        // Call update camera function by its pointer
 
-        cameraUpdaters[cameraOption](&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
-
+        // Camera
+        FixCameraCenterInsideMap(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
         //----------------------------------------------------------------------------------
 
         // Draw
@@ -130,13 +111,17 @@ int main(void)
 
         BeginMode2D(camera);
 
-        for (int i = 0; i < envItemsLength; i++)
+        for (int i = 0; i < envItemsLength; i++) {
             DrawRectangleRec(envItems[i].rect, envItems[i].color);
+        }
 
-        Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
+        for (int i = 0; i < eventsLength; i++) {
+            if (events[i].isActive) {
+                DrawRectangleRec(events[i].rect, events[i].color);
+            }
+        }
 
-        if (CheckCollisionRecs(lava, playerRect))
-        {
+        if (CheckCollisionRecs(lava, playerRect)) {
             break;
         }
 
@@ -220,46 +205,14 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     {
         player->position.y += player->speed * delta;
         player->speed += G * delta;
-        if (player->jumpCounter < PLAYER_JUMP_LIMIT)
-        {
+        if (player->jumpCounter < PLAYER_JUMP_LIMIT) {
             player->canJump = true;
-        }
-        else
-        {
+        } else {
             player->canJump = false;
         }
     }
-    else
-    {
+    else {
         player->canJump = true;
         player->jumpCounter = 0;
     }
-}
-
-void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height)
-{
-    camera->target = player->position;
-    camera->offset = (Vector2){width / 2.0f, height / 2.0f};
-    float minX = 1000, minY = 2000, maxX = -1000, maxY = -2000;
-
-    for (int i = 0; i < envItemsLength; i++)
-    {
-        EnvItem *ei = envItems + i;
-        minX = fminf(ei->rect.x, minX);
-        maxX = fmaxf(ei->rect.x + ei->rect.width, maxX);
-        minY = fminf(ei->rect.y, minY);
-        maxY = fmaxf(ei->rect.y + ei->rect.height, maxY);
-    }
-
-    Vector2 max = GetWorldToScreen2D((Vector2){maxX, maxY}, *camera);
-    Vector2 min = GetWorldToScreen2D((Vector2){minX, minY}, *camera);
-
-    if (max.x < width)
-        camera->offset.x = width - (max.x - width / 2);
-    if (max.y < height)
-        camera->offset.y = height - (max.y - height / 2);
-    if (min.x > 0)
-        camera->offset.x = width / 2 - min.x;
-    if (min.y > 0)
-        camera->offset.y = height / 2 - min.y;
 }
