@@ -9,27 +9,34 @@
 const int screenWidth = 600;
 const int screenHeight = 800;
 
-typedef struct Player {
+typedef struct Player
+{
     Vector2 position;
     float speed;
     bool canJump;
     int jumpCounter;
 } Player;
 
+typedef struct Move
+{
+    bool moving;
+    int speed;
+} Move;
+
 typedef struct EnvItem
 {
     Rectangle rect;
+    Move if_dynamic;
     int blocking;
-    bool moving;
     bool destroy;
+    int destroy_time;
     Color color;
 } EnvItem;
-
 //----------------------------------------------------------------------------------
 // Module functions declaration
 //----------------------------------------------------------------------------------
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
-void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause, int *envItems_speed);
+void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
 void UpdateCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -41,7 +48,7 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Endgame");
 
-    Rectangle lava = { 0, 1000, 600, 1000 };
+    Rectangle lava = {0, 1000, 600, 1000};
 
     float deltaTime = 0.0f;
     float lastFrameTime = GetTime();
@@ -51,13 +58,14 @@ int main(void)
     player.speed = 0;
     player.canJump = false;
     EnvItem envItems[] = {
-        {{0, 0, screenWidth, screenHeight}, 0, false, false, LIGHTGRAY},
-        {{0, 800, screenWidth, 200}, 1, false, false, GRAY},
-        {{450, 600, 100, 10}, 1, false, true, RED},
-        {{250, 450, 100, 10}, 1, true, false, GRAY},
-        {{50, 700, 200, 10}, 1, false, false, GRAY},
-        {{0, 300, 200, 10}, 1, false, false, GRAY},
-        {{0, 0, 0, 0}, 0, false, false, GRAY}};
+        {{0, 0, screenWidth, screenHeight}, {false, 0}, 0, false, 1, LIGHTGRAY},
+        {{0, 800, screenWidth, 200}, {false, 0}, 1, false, 1, GRAY},
+        {{450, 600, 100, 10}, {false, 0}, 1, true, 3, RED},
+        {{250, 450, 100, 10}, {true, 2}, 1, false, 1, GRAY},
+        {{50, 700, 200, 10}, {false, 0}, 1, false, 1, GRAY},
+        {{0, 300, 200, 10}, {false, 0}, 1, false, 1, BLACK},
+        {{300, 230, 100, 10}, {true, -1}, 1, true, 1, GREEN},
+        {{0, 0, 0, 0}, {false, 0}, 0, false, 0, GRAY}};
     bool pause = false;
     int envItemsLength = sizeof(envItems) / sizeof(envItems[0]) - 1;
     int envItems_speed = 2;
@@ -84,21 +92,26 @@ int main(void)
         float currentFrameTime = GetTime();
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
-
+        // variables for bricks
+        bool destroy = false;
+        int index;
         // Update the position of the lava object
         lava.y -= LAVA_SPEED * deltaTime;
 
         float deltaTime = GetFrameTime();
-        bool destroy = false;
-        int index;
-
-        UpdateBricks(envItems, envItemsLength, pause, &envItems_speed);
+        
+        UpdateBricks(envItems, envItemsLength, pause);
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime, &destroy, &index);
         if (destroy)
         {
             framesCounter++;
         }
-        if ((((framesCounter / 180) % 3) == 1) && envItems[index].destroy == true)
+        if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true)
+        {
+            envItems[index] = envItems[5];
+            framesCounter = 0;
+        }
+        if (envItems[index].destroy_time == 1 && envItems[index].destroy && (((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 0))
         {
             envItems[index] = envItems[5];
             framesCounter = 0;
@@ -122,7 +135,8 @@ int main(void)
 
         Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
 
-        if (CheckCollisionRecs(lava, playerRect)) {
+        if (CheckCollisionRecs(lava, playerRect))
+        {
             break;
         }
 
@@ -142,18 +156,18 @@ int main(void)
 
     return 0;
 }
-void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause, int *envItems_speed)
+void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause)
 {
     for (int i = 0; i < envItemsLength; i++)
     {
-        if (envItems[i].moving == true)
+        if (envItems[i].if_dynamic.moving == true)
         {
             if (!pause)
-                envItems[i].rect.x += *envItems_speed;
+                envItems[i].rect.x += envItems[i].if_dynamic.speed;
 
             // Bounce box on x screen limits
             if (((envItems[i].rect.x + envItems[i].rect.width) >= GetScreenWidth()) || (envItems[i].rect.x <= 0))
-                *envItems_speed *= -1;
+                envItems[i].if_dynamic.speed *= -1;
         }
     }
 }
@@ -164,12 +178,12 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     Rectangle playerRect = {player->position.x - 35, player->position.y - 70, 70, 70};
     if (IsKeyDown(KEY_LEFT))
         player->position.x -= PLAYER_HOR_SPD * delta;
-    if (player->position.x - (playerRect.width/2) <= 0)
-        player->position.x = (playerRect.width/2);
+    if (player->position.x - (playerRect.width / 2) <= 0)
+        player->position.x = (playerRect.width / 2);
     if (IsKeyDown(KEY_RIGHT))
         player->position.x += PLAYER_HOR_SPD * delta;
-    if (player->position.x + (playerRect.width/2) >= screenWidth)
-        player->position.x = screenWidth - (playerRect.width/2);
+    if (player->position.x + (playerRect.width / 2) >= screenWidth)
+        player->position.x = screenWidth - (playerRect.width / 2);
     if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT)
     {
         player->speed = -PLAYER_JUMP_SPD;
@@ -193,8 +207,8 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             player->speed = 0.0f;
             p->y = ei->rect.y;
             *index = i;
-            
-            if (ei->moving == true)
+
+            if (ei->if_dynamic.moving == true)
             {
                 p->x = ei->rect.x + ei->rect.width / 2;
             }
@@ -206,13 +220,17 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     {
         player->position.y += player->speed * delta;
         player->speed += G * delta;
-        if (player->jumpCounter < PLAYER_JUMP_LIMIT) {
+        if (player->jumpCounter < PLAYER_JUMP_LIMIT)
+        {
             player->canJump = true;
-        } else {
+        }
+        else
+        {
             player->canJump = false;
         }
     }
-    else {
+    else
+    {
         player->canJump = true;
         player->jumpCounter = 0;
     }
