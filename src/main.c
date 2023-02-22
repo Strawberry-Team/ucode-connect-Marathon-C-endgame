@@ -8,7 +8,7 @@
 #define LAVA_SPEED 25
 #define LAVA_SPEED_MULTIPLIER 1.3
 
-const int screenWidth = 600;
+const int screenWidth = 800;
 const int screenHeight = 800;
 
 //------------------------------------------------------------------------------------
@@ -27,10 +27,28 @@ int main(void)
     float lastFrameTime = GetTime();
     int lavaSpeedMultiplier = 1;
 
+    const char *filename = "scarfy.png";
+    Texture2D scarfy = LoadTexture(filename);
+    scarfy.height /= 2;
+    scarfy.width /= 2;
+
+    unsigned numFrames = 6;
+    int frameWidth = scarfy.width / numFrames;
+    Rectangle frameRec = { 0.0f, 0.0f, (float)frameWidth, (float)scarfy.height};
+
+    TraceLog(LOG_INFO, "Player X: [%d]; Player Y: [%d]", frameRec.width, frameRec.height);
+    Vector2 scarfyPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
+    Vector2 scarfyVelocity = {0.0f,0.0f};
+    unsigned frameDelay = 5;
+    unsigned frameDelayCounter = 0;
+    unsigned frameIndex = 0;
+
+
     Player player = {0};
     player.position = (Vector2){300, 800};
     player.speed = 0;
     player.canJump = false;
+
     EnvItem envItems[] = {
         {{0, 0, screenWidth, screenHeight}, {false, 0}, 0, false, 1, LIGHTGRAY},
         {{0, 800, screenWidth, 200}, {false, 0}, 1, false, 1, GRAY},
@@ -73,7 +91,7 @@ int main(void)
         // Update the position of the lava object
         lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
 
-        Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
+        Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
 
         for (int i = 0; i < eventsLength; i++) {
             int isCollision = CheckCollisionRecs(playerRect, events[i].rect);
@@ -92,6 +110,20 @@ int main(void)
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime, &destroy, &index);
         if (destroy) {
             framesCounter++;
+        }
+
+        bool scarfyMoving = player.position.x != 0.0f; //|| player.position.y != 0.0f;
+        //----------------------------------------------------------------------------------
+        scarfyPosition = Vector2Add(scarfyPosition, scarfyVelocity);
+        ++frameDelayCounter;
+        if(frameDelayCounter > frameDelay) {
+            frameDelayCounter = 0;
+
+            if(scarfyMoving) {
+                ++frameIndex;
+                frameIndex %= numFrames;
+                frameRec.x = (float) frameWidth * frameIndex;
+            }
         }
 
         if ((((framesCounter / 180) % 3) == 1) && envItems[index].destroy == true) {
@@ -125,8 +157,13 @@ int main(void)
             break;
         }
 
-        DrawRectangleRec(playerRect, RED);
+        //DrawRectangleRec(playerRect, RED);
         DrawRectangleRec(lava, RED);
+
+
+
+        DrawTextureRec(scarfy, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
+        //DrawTextureRec(scarfy, frameRec, scarfyPosition, WHITE);
 
         EndMode2D();
 
