@@ -4,6 +4,7 @@
 #define PLAYER_JUMP_SPD 350.0f
 #define PLAYER_HOR_SPD 200.0f
 #define PLAYER_JUMP_LIMIT 2
+#define LAVA_SPEED 25
 
 const int screenWidth = 600;
 const int screenHeight = 800;
@@ -40,6 +41,11 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Endgame");
 
+    Rectangle lava = { 0, 1000, 600, 1000 };
+
+    float deltaTime = 0.0f;
+    float lastFrameTime = GetTime();
+
     Player player = {0};
     player.position = (Vector2){300, 800};
     player.speed = 0;
@@ -74,9 +80,13 @@ int main(void)
     // Main game loop
     while (!WindowShouldClose())
     {
-        // Update
-        
-        //----------------------------------------------------------------------------------
+        // Update the timer variables
+        float currentFrameTime = GetTime();
+        deltaTime = currentFrameTime - lastFrameTime;
+        lastFrameTime = currentFrameTime;
+
+        // Update the position of the lava object
+        lava.y -= LAVA_SPEED * deltaTime;
 
         float deltaTime = GetFrameTime();
         bool destroy = false;
@@ -111,7 +121,13 @@ int main(void)
             DrawRectangleRec(envItems[i].rect, envItems[i].color);
 
         Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
+
+        if (CheckCollisionRecs(lava, playerRect)) {
+            break;
+        }
+
         DrawRectangleRec(playerRect, RED);
+        DrawRectangleRec(lava, RED);
 
         EndMode2D();
 
@@ -148,12 +164,12 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     Rectangle playerRect = {player->position.x - 35, player->position.y - 70, 70, 70};
     if (IsKeyDown(KEY_LEFT))
         player->position.x -= PLAYER_HOR_SPD * delta;
-    if (player->position.x - 35 <= 0)
-        player->position.x = 35;
+    if (player->position.x - (playerRect.width/2) <= 0)
+        player->position.x = (playerRect.width/2);
     if (IsKeyDown(KEY_RIGHT))
         player->position.x += PLAYER_HOR_SPD * delta;
-    if (player->position.x + playerRect.width >= screenWidth)
-        player->position.x = screenWidth - playerRect.width;
+    if (player->position.x + (playerRect.width/2) >= screenWidth)
+        player->position.x = screenWidth - (playerRect.width/2);
     if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT)
     {
         player->speed = -PLAYER_JUMP_SPD;
