@@ -26,7 +26,9 @@ typedef struct Move {
     int speed;
 } Move;
 
-typedef struct EnvItem {
+typedef struct EnvItem
+{
+    Texture2D photo;
     Rectangle rect;
     Move if_dynamic;
     int blocking;
@@ -50,6 +52,7 @@ typedef struct Trigger {
 
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
+void UpdateBoards(Player *player, EnvItem *board, int boardLength, int delta);
 void FixCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 
 #endif
