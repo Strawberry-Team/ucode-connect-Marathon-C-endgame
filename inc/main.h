@@ -30,15 +30,17 @@ typedef struct EnvItem
 } EnvItem;
 
 typedef enum {
-    INCREASE_LAVA_SPEED = 0
-} EventType;
+    TRIGGER_TYPE_TAKE_TREASURE = 0,
+    TRIGGER_TYPE_START_LAVA = 1,
+    TRIGGER_TYPE_INCREASE_LAVA_SPEED = 2
+} TriggerType;
 
-typedef struct EventCheckPoint {
+typedef struct Trigger {
     Rectangle rect;
     Color color;
     bool isActive;
-    EventType eventType;
-} EventCheckPoint;
+    TriggerType eventType;
+} Trigger;
 
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
