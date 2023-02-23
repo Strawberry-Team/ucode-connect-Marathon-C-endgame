@@ -19,7 +19,7 @@
 const int screenWidth = 800;
 const int screenHeight = 800;
 
-
+void UpdateLava(Lava *lava, float delta);
 //------------------------------------------------------------------------------------
 // Program main entry point
 //------------------------------------------------------------------------------------
@@ -38,13 +38,11 @@ int main(void)
     lava.speed = 0;
     lava.speedMultiplier = 1;
     lava.animationFrames = 0;
+    lava.animatedImage = LoadImageAnim("resources/textures/lava.gif", &lava.animationFrames);
+    lava.texture2D = LoadTextureFromImage(lava.animatedImage);
+    /* END LAVA */
 
-    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &lava.animationFrames);
-    Texture2D texLavaAnim = LoadTextureFromImage(imLavaAnim);
-
-    /* END: INIT LAVA */
-
-    /* CHARACTER TEXTURE */
+    /* INIT CHARACTER */
     Texture2D character = LoadTexture("resources/textures/character_1.png");
     character.height /= 2;
     character.width /= 2;
@@ -52,8 +50,6 @@ int main(void)
     unsigned numFrames = 24;
     Rectangle frameRec = { 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
 
-    Vector2 characterPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
-    Vector2 characterVelocity = {0.0f,0.0f};
     unsigned frameDelay = 1;
     unsigned frameDelayCounter = 0;
     unsigned frameIndex = 0;
@@ -65,7 +61,9 @@ int main(void)
     player.canJump = false;
     player.playerStatus = PLAYER_STATUS_WAIT;
 
-    //-------------map texture------
+    /* END CHARACTER */
+
+    /* INIT MAP */
     Texture2D stat = LoadTexture("resources/textures/static.png");
     Texture2D dynamic = LoadTexture("resources/textures/dynamic.png");
     Texture2D board = LoadTexture("resources/textures/board.png");
@@ -100,7 +98,10 @@ int main(void)
     bool destroy = false;
     int index;
 
-//-------------camera------
+    /* END MAP */
+
+
+    /* INIT CAMERA */
 
     Camera2D camera = {0};
     camera.target = player.position;
@@ -109,51 +110,39 @@ int main(void)
     camera.zoom = 1.0f;
     int framesCounter = 0;
 
+    /* END CAMERA */
 
-//------------- event-----
+
+    /* INIT TRIGGERS */
     Trigger triggers[] = {
             {{(GetScreenWidth() / 2.0f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE},
             {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA},
             {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED},
     };
     int triggersLength = sizeof(triggers) / sizeof(triggers[0]);
-//------------------------------
+    /* END TRIGGERS */
+
     SetTargetFPS(60);
 
     float deltaTime;
     float lastFrameTime = GetTime();
-    // Main game loop
+
+    /* INIT GAME LOOP */
     while (!WindowShouldClose()) {
         // Update the timer variables
         float currentFrameTime = GetTime();
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
 
-        // Update the position of the lava object
-        lava.rect.y -= lava.speed * deltaTime * lava.speedMultiplier;
+        Rectangle playerRect = {player.position.x - (PLAYER_WIDTH / 2), player.position.y - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT - 20};
 
-        lava.frame++;
-        if (lava.frame >= lava.frameDelay) {
-            // Move to next frame
-            // NOTE: If final frame is reached we return to first frame
-            lava.currentAnimFrameLava++;
-            if (lava.currentAnimFrameLava >= lava.animationFrames) {
-                lava.currentAnimFrameLava = 0;
-            }
-
-            // Get memory offset position for next frame data in image.data
-            lava.nextFrameDataOffset = imLavaAnim.width * imLavaAnim.height * 4 * lava.currentAnimFrameLava;
-
-            // Update GPU texture data with next frame image data
-            // WARNING: Data size (frame size) and pixel format must match already created texture
-            UpdateTexture(texLavaAnim, ((unsigned char *)imLavaAnim.data) + lava.nextFrameDataOffset);
-
-            lava.frame = 0;
+        /* UPDATE LAVA */
+        UpdateLava(&lava, deltaTime);
+        if (CheckCollisionRecs(lava.rect, playerRect)) {
+            break;
         }
 
-        Rectangle playerRect = {player.position.x - (PLAYER_WIDTH / 2), player.position.y - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT - 20};
-        //Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
-
+        /* CHECK TRIGGERS */
         for (int i = 0; i < triggersLength; i++) {
             int isCollision = CheckCollisionRecs(playerRect, triggers[i].rect);
             if (isCollision && triggers[i].isActive) {
@@ -177,9 +166,6 @@ int main(void)
             }
         }
 
-        float deltaTime = GetFrameTime();
-       
-      
         UpdateBricks(envItems, envItemsLength, pause);
         UpdatePlayer(&player, envItems, envItemsLength, deltaTime, &destroy, &index);
 
@@ -188,8 +174,7 @@ int main(void)
             framesCounter++;
         }
 
-        //----------------------------------------------------------------------------------
-        characterPosition = Vector2Add(characterPosition, characterVelocity);
+
         ++frameDelayCounter;
         if(frameDelayCounter > frameDelay) {
             frameDelayCounter = 0;
@@ -198,7 +183,6 @@ int main(void)
             frameIndex %= numFrames;
             frameRec.y = (float) PLAYER_FRAME_HEIGHT * frameIndex;
         }
-
 
         if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[17];
@@ -210,39 +194,34 @@ int main(void)
             framesCounter = 0;
         }
 
-        // Camera
+        /* FIX CAMERA */
         FixCameraCenterInsideMap(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
       
-        // Draw
+        /* START DRAWING */
         BeginDrawing();
-        ClearBackground(LIGHTGRAY);
+        ClearBackground(BLANK);
         BeginMode2D(camera);
 
-        //EnviItems drawing
+        /* ENVIRONMENT */
         for (int i = 0; i < envItemsLength; i++) {
             Vector2 vector = {(float)envItems[i].rect.x, (float)envItems[i].rect.y};
             DrawTextureV(envItems[i].photo, vector,envItems[i].color);
         }
 
-        //events drawing
+        /* TRIGGERS */
         for (int i = 0; i < triggersLength; i++) {
             if (triggers[i].isActive) {
                 DrawRectangleRec(triggers[i].rect, triggers[i].color);
             }
         }
 
-        //check collision
-//        if (CheckCollisionRecs(lava.rect, playerRect)) {
-//            break;
-//        }
+        //TODO: DELETE AFTER
+        //DrawRectangleRec(playerRect, BLANK);
 
-        DrawRectangleRec(playerRect, BLANK);
-        DrawTexture(texLavaAnim, lava.rect.x, lava.rect.y, WHITE);
+        /* LAVA */
+        DrawTexture(lava.texture2D, lava.rect.x, lava.rect.y, WHITE);
 
-
-        DrawRectangleRec(frameRec, GREEN);
-
-        //TODO: это нужно для определения поворота текстуры.
+        /* CHARACTER */
         if (player.playerStatus == PLAYER_STATUS_MOVE_RIGHT) {
             if(frameRec.width < 0) {
                 frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
@@ -262,15 +241,22 @@ int main(void)
         DrawTextureRec(character, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
 
         EndMode2D();
-
         EndDrawing();
+
+        /* EMD DRAWING */
        
     }
-    UnloadTexture(texLavaAnim);   // Unload texture
-    UnloadImage(imLavaAnim);
-    // De-Initialization
 
-    CloseWindow(); // Close window and OpenGL context
+    /* END GAME LOOP */
+
+    /* INIT UNLOAD TEXTURES */
+
+    UnloadTexture(lava.texture2D);
+    UnloadImage(lava.animatedImage);
+
+    /* END UNLOAD TEXTURES */
+
+    CloseWindow();
    
     return 0;
 }
@@ -369,5 +355,28 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     {
         player->canJump = true;
         player->jumpCounter = 0;
+    }
+}
+
+void UpdateLava(Lava *lava, float delta) {
+    lava->rect.y -= lava->speed * lava->speedMultiplier * delta;
+
+    lava->frame++;
+    if (lava->frame >= lava->frameDelay) {
+        // Move to next frame
+        // NOTE: If final frame is reached we return to first frame
+        lava->currentAnimFrameLava++;
+        if (lava->currentAnimFrameLava >= lava->animationFrames) {
+            lava->currentAnimFrameLava = 0;
+        }
+
+        // Get memory offset position for next frame data in image.data
+        lava->nextFrameDataOffset = lava->animatedImage.width * lava->animatedImage.height * 4 * lava->currentAnimFrameLava;
+
+        // Update GPU texture data with next frame image data
+        // WARNING: Data size (frame size) and pixel format must match already created texture
+        UpdateTexture(lava->texture2D, ((unsigned char *)lava->animatedImage.data) + lava->nextFrameDataOffset);
+
+        lava->frame = 0;
     }
 }
