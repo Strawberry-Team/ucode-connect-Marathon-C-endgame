@@ -22,10 +22,13 @@ typedef struct Player {
 } Player;
 
 typedef struct Lava {
+    Image animatedImage;
+    Texture2D texture2D;
     Rectangle rect;
+
+    int frame;
     int frameDelay; // Frame delay to switch between animation frames
     unsigned int nextFrameDataOffset;
-    int frame;
     int currentAnimFrameLava; // Current animation frame to load and draw
     int animationFrames;
 
