@@ -22,7 +22,18 @@ int main(void)
 
     InitWindow(screenWidth, screenHeight, "Endgame");
 
-    Rectangle lava = { 0, 1000, 600, 1000 };
+    int animFrames = 0;
+
+    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &animFrames);
+    Texture2D texLavaAnim = LoadTextureFromImage(imLavaAnim);
+
+    unsigned int nextFrameDataOffset = 0;
+
+    int currentAnimFrameLava = 0;       // Current animation frame to load and draw
+    int frameDelaylava = 20;             // Frame delay to switch between animation frames
+    int framelava = 0;
+
+    Rectangle lava = { 100, 1000, 600, 951 };
 
     float deltaTime = 0.0f;
     float lastFrameTime = GetTime();
@@ -89,6 +100,24 @@ int main(void)
         // Update the position of the lava object
         lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
 
+        framelava++;
+        if (framelava >= frameDelaylava)
+        {
+            // Move to next frame
+            // NOTE: If final frame is reached we return to first frame
+            currentAnimFrameLava++;
+            if (currentAnimFrameLava >= animFrames) currentAnimFrameLava = 0;
+
+            // Get memory offset position for next frame data in image.data
+            nextFrameDataOffset = imLavaAnim.width*imLavaAnim.height*4*currentAnimFrameLava;
+
+            // Update GPU texture data with next frame image data
+            // WARNING: Data size (frame size) and pixel format must match already created texture
+            UpdateTexture(texLavaAnim, ((unsigned char *)imLavaAnim.data) + nextFrameDataOffset);
+
+            framelava = 0;
+        }
+
         Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
 
         for (int i = 0; i < triggersLength; i++) {
@@ -107,6 +136,7 @@ int main(void)
 
                 if (triggers[i].eventType == TRIGGER_TYPE_INCREASE_LAVA_SPEED) {
                     lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
+                    frameDelaylava = 15;
                     triggers[i].isActive = false;
                     TraceLog(LOG_INFO, "TRIGGER_TYPE_INCREASE_LAVA_SPEED");
                 }
@@ -169,7 +199,7 @@ int main(void)
         }
 
         //DrawRectangleRec(playerRect, RED);
-        DrawRectangleRec(lava, RED);
+        DrawTexture(texLavaAnim, lava.x, lava.y, WHITE);
 
 
 
@@ -181,7 +211,8 @@ int main(void)
         EndDrawing();
         //----------------------------------------------------------------------------------
     }
-
+    UnloadTexture(texLavaAnim);   // Unload texture
+    UnloadImage(imLavaAnim);
     // De-Initialization
     //--------------------------------------------------------------------------------------
     CloseWindow(); // Close window and OpenGL context
