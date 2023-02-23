@@ -13,11 +13,12 @@
 #define PLAYER_WIDTH 76.0f
 #define PLAYER_HEIGHT 100.0f
 
+#define LAVA_DEFAULT_SPEED 40.0f
+#define LAVA_SPEED_MULTIPLIER 0.5f
+
 const int screenWidth = 800;
 const int screenHeight = 800;
 
-int LAVA_SPEED = 0;
-float LAVA_SPEED_MULTIPLIER = 1.2;
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -27,35 +28,32 @@ int main(void)
     // Initialization
     InitWindow(screenWidth, screenHeight, "Endgame");
 
-    //-------------lava-----------
-    int animFrames = 0;
+    /* INIT LAVA */
+    Lava lava = { 0 };
+    lava.rect = (Rectangle) {0, screenHeight + 200, screenWidth, screenHeight + 200};
+    lava.nextFrameDataOffset = 0;
+    lava.frame = 0;
+    lava.frameDelay = 20;
+    lava.currentAnimFrameLava = 0;
+    lava.speed = 0;
+    lava.speedMultiplier = 1;
+    lava.animationFrames = 0;
 
-    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &animFrames);
+    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &lava.animationFrames);
     Texture2D texLavaAnim = LoadTextureFromImage(imLavaAnim);
 
-    unsigned int nextFrameDataOffset = 0;
+    /* END: INIT LAVA */
 
-    int currentAnimFrameLava = 0;       // Current animation frame to load and draw
-    int frameDelaylava = 20;             // Frame delay to switch between animation frames
-    int framelava = 0;
-
-    Rectangle lava = {0, 1000, 800, 1000};
-    float deltaTime;
-    float lastFrameTime = GetTime();
-    int lavaSpeedMultiplier = 1;
-
-    //-------END-LAVA------
-
-    //-------------player-----------
-    Texture2D scarfy = LoadTexture("resources/textures/character_1.png");
-    scarfy.height /= 2;
-    scarfy.width /= 2;
+    /* CHARACTER TEXTURE */
+    Texture2D character = LoadTexture("resources/textures/character_1.png");
+    character.height /= 2;
+    character.width /= 2;
 
     unsigned numFrames = 24;
     Rectangle frameRec = { 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
 
-    Vector2 scarfyPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
-    Vector2 scarfyVelocity = {0.0f,0.0f};
+    Vector2 characterPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
+    Vector2 characterVelocity = {0.0f,0.0f};
     unsigned frameDelay = 1;
     unsigned frameDelayCounter = 0;
     unsigned frameIndex = 0;
@@ -108,7 +106,7 @@ int main(void)
     camera.target = player.position;
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 1.4f;
+    camera.zoom = 1.0f;
     int framesCounter = 0;
 
 
@@ -122,6 +120,8 @@ int main(void)
 //------------------------------
     SetTargetFPS(60);
 
+    float deltaTime;
+    float lastFrameTime = GetTime();
     // Main game loop
     while (!WindowShouldClose()) {
         // Update the timer variables
@@ -130,24 +130,25 @@ int main(void)
         lastFrameTime = currentFrameTime;
 
         // Update the position of the lava object
-        lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
+        lava.rect.y -= lava.speed * deltaTime * lava.speedMultiplier;
 
-        framelava++;
-        if (framelava >= frameDelaylava)
-        {
+        lava.frame++;
+        if (lava.frame >= lava.frameDelay) {
             // Move to next frame
             // NOTE: If final frame is reached we return to first frame
-            currentAnimFrameLava++;
-            if (currentAnimFrameLava >= animFrames) currentAnimFrameLava = 0;
+            lava.currentAnimFrameLava++;
+            if (lava.currentAnimFrameLava >= lava.animationFrames) {
+                lava.currentAnimFrameLava = 0;
+            }
 
             // Get memory offset position for next frame data in image.data
-            nextFrameDataOffset = imLavaAnim.width*imLavaAnim.height*4*currentAnimFrameLava;
+            lava.nextFrameDataOffset = imLavaAnim.width * imLavaAnim.height * 4 * lava.currentAnimFrameLava;
 
             // Update GPU texture data with next frame image data
             // WARNING: Data size (frame size) and pixel format must match already created texture
-            UpdateTexture(texLavaAnim, ((unsigned char *)imLavaAnim.data) + nextFrameDataOffset);
+            UpdateTexture(texLavaAnim, ((unsigned char *)imLavaAnim.data) + lava.nextFrameDataOffset);
 
-            framelava = 0;
+            lava.frame = 0;
         }
 
         Rectangle playerRect = {player.position.x - (PLAYER_WIDTH / 2), player.position.y - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT - 20};
@@ -162,14 +163,14 @@ int main(void)
                 }
 
                 if (triggers[i].eventType == TRIGGER_TYPE_START_LAVA) {
-                    LAVA_SPEED = 0;
+                    lava.speed = LAVA_DEFAULT_SPEED;
                     triggers[i].isActive = false;
                     TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
                 }
 
                 if (triggers[i].eventType == TRIGGER_TYPE_INCREASE_LAVA_SPEED) {
-                    lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
-                    frameDelaylava = 15;
+                    lava.speedMultiplier += LAVA_SPEED_MULTIPLIER;
+                    lava.frameDelay = 15;
                     triggers[i].isActive = false;
                     TraceLog(LOG_INFO, "TRIGGER_TYPE_INCREASE_LAVA_SPEED");
                 }
@@ -188,7 +189,7 @@ int main(void)
         }
 
         //----------------------------------------------------------------------------------
-        scarfyPosition = Vector2Add(scarfyPosition, scarfyVelocity);
+        characterPosition = Vector2Add(characterPosition, characterVelocity);
         ++frameDelayCounter;
         if(frameDelayCounter > frameDelay) {
             frameDelayCounter = 0;
@@ -231,13 +232,12 @@ int main(void)
         }
 
         //check collision
-        if (CheckCollisionRecs(lava, playerRect))
-        {
-            break;
-        }
+//        if (CheckCollisionRecs(lava.rect, playerRect)) {
+//            break;
+//        }
 
         DrawRectangleRec(playerRect, BLANK);
-        DrawTexture(texLavaAnim, lava.x, lava.y, WHITE);
+        DrawTexture(texLavaAnim, lava.rect.x, lava.rect.y, WHITE);
 
 
         DrawRectangleRec(frameRec, GREEN);
@@ -259,7 +259,7 @@ int main(void)
             frameRec.width = PLAYER_FRAME_WIDTH_WAIT;
         }
 
-        DrawTextureRec(scarfy, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
+        DrawTextureRec(character, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
 
         EndMode2D();
 

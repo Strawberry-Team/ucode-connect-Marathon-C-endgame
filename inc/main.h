@@ -23,13 +23,14 @@ typedef struct Player {
 
 typedef struct Lava {
     Rectangle rect;
-    int frameDelay;
+    int frameDelay; // Frame delay to switch between animation frames
     unsigned int nextFrameDataOffset;
     int frame;
+    int currentAnimFrameLava; // Current animation frame to load and draw
+    int animationFrames;
 
-
+    float speed;
     float speedMultiplier;
-
 } Lava;
 
 typedef struct Move {
