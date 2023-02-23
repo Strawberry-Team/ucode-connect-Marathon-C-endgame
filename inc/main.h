@@ -7,6 +7,7 @@
 
 typedef struct Player
 {
+    
     Vector2 position;
     float speed;
     bool canJump;
@@ -21,6 +22,7 @@ typedef struct Move
 
 typedef struct EnvItem
 {
+    Texture2D photo;
     Rectangle rect;
     Move if_dynamic;
     int blocking;
