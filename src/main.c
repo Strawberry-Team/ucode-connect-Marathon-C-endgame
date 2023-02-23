@@ -1,10 +1,9 @@
-
 #include "../inc/main.h"
 
 #define G 680
 #define PLAYER_JUMP_SPD 340.0f
 #define PLAYER_HOR_SPD 220.0f
-#define PLAYER_JUMP_LIMIT 2
+#define PLAYER_JUMP_LIMIT 100
 #define PLAYER_FRAME_WIDTH_WAIT 72.5f
 #define PLAYER_FRAME_WIDTH_RUN 77.0f
 
@@ -13,7 +12,6 @@
 
 #define PLAYER_WIDTH 76.0f
 #define PLAYER_HEIGHT 100.0f
-
 
 const int screenWidth = 800;
 const int screenHeight = 800;
@@ -28,8 +26,8 @@ int main(void)
 {
     // Initialization
     InitWindow(screenWidth, screenHeight, "Endgame");
-//-------------lava-----------
 
+    //-------------lava-----------
     int animFrames = 0;
 
     Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &animFrames);
@@ -42,14 +40,14 @@ int main(void)
     int framelava = 0;
 
     Rectangle lava = {0, 1000, 800, 1000};
-    Texture2D texture = LoadTexture("resources/textures/brick.png");
     float deltaTime;
     float lastFrameTime = GetTime();
     int lavaSpeedMultiplier = 1;
-//-------------player-----------
 
-    const char *filename = "resources/textures/character_1.png";
-    Texture2D scarfy = LoadTexture(filename);
+    //-------END-LAVA------
+
+    //-------------player-----------
+    Texture2D scarfy = LoadTexture("resources/textures/character_1.png");
     scarfy.height /= 2;
     scarfy.width /= 2;
 
@@ -67,6 +65,7 @@ int main(void)
     player.position = (Vector2){(GetScreenWidth() / 4.0f), 800};
     player.speed = 0;
     player.canJump = false;
+    player.playerStatus = PLAYER_STATUS_WAIT;
 
     //-------------map texture------
     Texture2D stat = LoadTexture("resources/textures/static.png");
@@ -75,13 +74,7 @@ int main(void)
     Texture2D flour = LoadTexture("resources/textures/flour.png");
     Texture2D back = LoadTexture("resources/textures/back.png");
     Texture2D pyramid = LoadTexture("resources/textures/pyramid.png");
-    Texture2D stat = LoadTexture("resources/textures/static.png");
-    Texture2D dynamic = LoadTexture("resources/textures/dynamic.png");
-    Texture2D board = LoadTexture("resources/textures/board.png");
-    Texture2D flour = LoadTexture("resources/textures/flour.png");
-    Texture2D back = LoadTexture("resources/textures/back.png");
-    Texture2D pyramid = LoadTexture("resources/textures/pyramid.png");
-    player.playerStatus = PLAYER_STATUS_WAIT;
+
 
     EnvItem envItems[] = {
         {pyramid, {0, -700, screenWidth, 400}, {false, 0}, 0, false, 1,WHITE},
@@ -115,7 +108,7 @@ int main(void)
     camera.target = player.position;
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
+    camera.zoom = 1.4f;
     int framesCounter = 0;
 
 
@@ -135,7 +128,6 @@ int main(void)
         float currentFrameTime = GetTime();
         deltaTime = currentFrameTime - lastFrameTime;
         lastFrameTime = currentFrameTime;
-        Rectangle playerRect = {player.position.x - 35, player.position.y - 70, 70, 70};
 
         // Update the position of the lava object
         lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
@@ -170,7 +162,7 @@ int main(void)
                 }
 
                 if (triggers[i].eventType == TRIGGER_TYPE_START_LAVA) {
-                    LAVA_SPEED = 30;
+                    LAVA_SPEED = 0;
                     triggers[i].isActive = false;
                     TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
                 }
@@ -206,14 +198,13 @@ int main(void)
             frameRec.y = (float) PLAYER_FRAME_HEIGHT * frameIndex;
         }
 
-        //TraceLog(LOG_INFO, "Player Status: [%d]", player.playerStatus);
-        
+
         if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[17];
             framesCounter = 0;
         }
 
-        if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 0) && envItems[index].destroy == true && envItems[index].destroy_time==1 ) {
+        if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 0) && envItems[index].destroy == true && envItems[index].destroy_time == 1 ) {
             envItems[index] = envItems[17];
             framesCounter = 0;
         }
@@ -227,11 +218,11 @@ int main(void)
         BeginMode2D(camera);
 
         //EnviItems drawing
-        for (int i = 0; i < envItemsLength; i++)
-        {
+        for (int i = 0; i < envItemsLength; i++) {
             Vector2 vector = {(float)envItems[i].rect.x, (float)envItems[i].rect.y};
             DrawTextureV(envItems[i].photo, vector,envItems[i].color);
         }
+
         //events drawing
         for (int i = 0; i < triggersLength; i++) {
             if (triggers[i].isActive) {
