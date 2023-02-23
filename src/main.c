@@ -2,14 +2,15 @@
 #include "../inc/main.h"
 
 #define G 680
-#define PLAYER_JUMP_SPD 320.0f
+#define PLAYER_JUMP_SPD 340.0f
 #define PLAYER_HOR_SPD 220.0f
 #define PLAYER_JUMP_LIMIT 2
-#define LAVA_SPEED 25
-#define LAVA_SPEED_MULTIPLIER 1.3
 
 const int screenWidth = 800;
 const int screenHeight = 800;
+
+int LAVA_SPEED = 0;
+float LAVA_SPEED_MULTIPLIER = 1.2;
 
 //------------------------------------------------------------------------------------
 // Program main entry point
@@ -45,7 +46,7 @@ int main(void)
 
 
     Player player = {0};
-    player.position = (Vector2){300, 800};
+    player.position = (Vector2){(GetScreenWidth() / 4.0f), 800};
     player.speed = 0;
     player.canJump = false;
 
@@ -67,15 +68,12 @@ int main(void)
     camera.zoom = 1.0f;
     int framesCounter = 0;
 
-
-    EventCheckPoint eventCheckPoint = { 0 };
-    eventCheckPoint.rect = (Rectangle) {0, 500, screenWidth, 20};
-    eventCheckPoint.color = BLUE;
-    eventCheckPoint.isActive = true;
-    eventCheckPoint.eventType = INCREASE_LAVA_SPEED;
-
-    EventCheckPoint events[] = {eventCheckPoint};
-    int eventsLength = sizeof(events) / sizeof(events[0]);
+    Trigger triggers[] = {
+            {{(GetScreenWidth() / 2.0f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE},
+            {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA},
+            {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED},
+    };
+    int triggersLength = sizeof(triggers) / sizeof(triggers[0]);
 
     SetTargetFPS(60);
     //--------------------------------------------------------------------------------------
@@ -93,12 +91,25 @@ int main(void)
 
         Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
 
-        for (int i = 0; i < eventsLength; i++) {
-            int isCollision = CheckCollisionRecs(playerRect, events[i].rect);
-            //TraceLog(LOG_INFO, "Collision: [%d]; ScreenWith: [%d]", test, GetScreenWidth());
-            if (isCollision && events[i].eventType == INCREASE_LAVA_SPEED && events[i].isActive) {
-                lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
-                events[i].isActive = false;
+        for (int i = 0; i < triggersLength; i++) {
+            int isCollision = CheckCollisionRecs(playerRect, triggers[i].rect);
+            if (isCollision && triggers[i].isActive) {
+                if (triggers[i].eventType == TRIGGER_TYPE_TAKE_TREASURE) {
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_TAKE_TREASURE");
+                }
+
+                if (triggers[i].eventType == TRIGGER_TYPE_START_LAVA) {
+                    LAVA_SPEED = 30;
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
+                }
+
+                if (triggers[i].eventType == TRIGGER_TYPE_INCREASE_LAVA_SPEED) {
+                    lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_INCREASE_LAVA_SPEED");
+                }
             }
         }
 
@@ -147,9 +158,9 @@ int main(void)
             DrawRectangleRec(envItems[i].rect, envItems[i].color);
         }
 
-        for (int i = 0; i < eventsLength; i++) {
-            if (events[i].isActive) {
-                DrawRectangleRec(events[i].rect, events[i].color);
+        for (int i = 0; i < triggersLength; i++) {
+            if (triggers[i].isActive) {
+                DrawRectangleRec(triggers[i].rect, triggers[i].color);
             }
         }
 
