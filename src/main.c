@@ -24,7 +24,7 @@ int main(void)
 
     int animFrames = 0;
 
-    Image imLavaAnim = LoadImageAnim("resources/docs/lava.gif", &animFrames);
+    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &animFrames);
     Texture2D texLavaAnim = LoadTextureFromImage(imLavaAnim);
 
     unsigned int nextFrameDataOffset = 0;
