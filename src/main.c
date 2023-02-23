@@ -1,9 +1,10 @@
 #include "../inc/main.h"
 
-#define G 680
-#define PLAYER_JUMP_SPD 340.0f
-#define PLAYER_HOR_SPD 220.0f
-#define PLAYER_JUMP_LIMIT 100
+#define GRAVITY 780
+#define PLAYER_JUMP_SPD 420.0f
+#define PLAYER_ADDITIONAL_JUMP_SPD_REDUCER 1.2f
+#define PLAYER_HOR_SPD 200.0f
+#define PLAYER_JUMP_LIMIT 2
 #define PLAYER_FRAME_WIDTH_WAIT 72.5f
 #define PLAYER_FRAME_WIDTH_RUN 77.0f
 
@@ -57,34 +58,33 @@ int main(void) {
     /* END CHARACTER */
 
     /* INIT MAP */
-    Texture2D stat = LoadTexture("resources/textures/static.png");
-    Texture2D dynamic = LoadTexture("resources/textures/dynamic.png");
-    Texture2D board = LoadTexture("resources/textures/board.png");
-    Texture2D flour = LoadTexture("resources/textures/flour.png");
-    Texture2D back = LoadTexture("resources/textures/back.png");
-    Texture2D pyramid = LoadTexture("resources/textures/pyramid.png");
-
+    Texture2D staticPlatformTexture = LoadTexture("resources/textures/static.png");
+    Texture2D dynamicPlatformTexture = LoadTexture("resources/textures/dynamic.png");
+    Texture2D sideWallTexture = LoadTexture("resources/textures/board.png");
+    Texture2D floorBackgroundTexture = LoadTexture("resources/textures/flour.png");
+    Texture2D backgroundTexture = LoadTexture("resources/textures/back.png");
+    Texture2D finalBackgroundTexture = LoadTexture("resources/textures/pyramid.png");
 
     EnvItem envItems[] = {
-        {pyramid, {0, -700, screenWidth, 400}, {false, 0}, 0, false, 1,WHITE},
-        {back, {0, -300, screenWidth, 1400}, {false, 0}, 0, false, 1, BROWN},
-        {flour, {0, 800, screenWidth, 200}, {false, 0}, 1, false, 1, BROWN},
-        {board, {0, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN}, 
-        {board, {700, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN},
-        {dynamic, {350, 600, 100, 20}, {false, 0}, 1, true, 3, RED},
-        {dynamic, {250, 450, 100, 20}, {true, 2}, 1, false, 1, DARKBROWN},
-        {stat, {50, 700, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {stat, {0, 300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {stat, {400, 100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {dynamic, {200, 50, 100, 20}, {true, -2}, 1, true, 1, GREEN},
-        {stat, {0, -50, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {stat, {80, -100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {dynamic, {350, -150, 100, 20}, {true, 2}, 1, true, 1, GREEN},
-        {stat, {0, -300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {stat, {250, -380, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
-        {stat, {0, -700, 400, 20}, {false, 0}, 1, false, 1, BLANK},
-        {dynamic, {300, 230, 100, 20}, {true, -1}, 1, true, 1, GREEN},
-        {stat, {0, 0, 0, 0}, {false, 0}, 0, false, 0, BLANK}};
+        {finalBackgroundTexture, {0, -700, screenWidth, 400}, {false, 0}, 0, false, 1,WHITE},
+        {backgroundTexture, {0, -300, screenWidth, 1400}, {false, 0}, 0, false, 1, BROWN},
+        {floorBackgroundTexture, {0, 800, screenWidth, 200}, {false, 0}, 1, false, 1, BROWN},
+        {sideWallTexture, {0, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN},
+        {sideWallTexture, {700, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN},
+        {dynamicPlatformTexture, {350, 600, 100, 20}, {false, 0}, 1, true, 3, RED},
+        {dynamicPlatformTexture, {250, 450, 100, 20}, {true, 2}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {50, 700, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {0, 300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {400, 100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {dynamicPlatformTexture, {200, 50, 100, 20}, {true, -2}, 1, true, 1, GREEN},
+        {staticPlatformTexture, {0, -50, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {80, -100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {dynamicPlatformTexture, {350, -150, 100, 20}, {true, 2}, 1, true, 1, GREEN},
+        {staticPlatformTexture, {0, -300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {250, -380, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN},
+        {staticPlatformTexture, {0, -700, 400, 20}, {false, 0}, 1, false, 1, BLANK},
+        {dynamicPlatformTexture, {300, 230, 100, 20}, {true, -1}, 1, true, 1, GREEN},
+        {staticPlatformTexture, {0, 0, 0, 0}, {false, 0}, 0, false, 0, BLANK}};
     
     bool pause = false;
     int envItemsLength = sizeof(envItems) / sizeof(envItems[0]) - 1;
@@ -92,7 +92,6 @@ int main(void) {
     int index;
 
     /* END MAP */
-
 
     /* INIT CAMERA */
 
@@ -211,7 +210,7 @@ int main(void) {
         }
 
         //TODO: DELETE AFTER
-        DrawRectangleRec(player.frameRect, RED);
+        //DrawRectangleRec(player.frameRect, RED);
 
         /* LAVA */
         DrawTexture(lava.texture2D, lava.rect.x, lava.rect.y, WHITE);
@@ -280,7 +279,8 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     if (IsKeyDown(KEY_LEFT)) {
         player->position.x -= PLAYER_HOR_SPD * delta;
         player->playerStatus = PLAYER_STATUS_MOVE_LEFT;
-    } else if (IsKeyDown(KEY_RIGHT)) {
+    }
+    else if (IsKeyDown(KEY_RIGHT)) {
         player->position.x += PLAYER_HOR_SPD * delta;
         player->playerStatus = PLAYER_STATUS_MOVE_RIGHT;
     }
@@ -289,7 +289,9 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     }
 
     if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT) {
-        player->speed = -PLAYER_JUMP_SPD;
+        player->speed = player->jumpCounter >= 1
+                ? (-PLAYER_JUMP_SPD / PLAYER_ADDITIONAL_JUMP_SPD_REDUCER)
+                : (-PLAYER_JUMP_SPD);
         player->canJump = false;
         player->jumpCounter += 1;
     }
@@ -334,7 +336,7 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
 
     if (!hitObstacle) {
         player->position.y += player->speed * delta;
-        player->speed += G * delta;
+        player->speed += GRAVITY * delta;
         if (player->jumpCounter < PLAYER_JUMP_LIMIT) {
             player->canJump = true;
         }
