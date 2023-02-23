@@ -15,6 +15,14 @@ typedef enum {
 
 typedef struct Player {
     Vector2 position;
+    Texture2D texture2D;
+    Rectangle frameRect;
+
+    unsigned int frames;
+    unsigned int frameDelay;
+    unsigned int frameDelayCounter;
+    unsigned int frameIndex;
+
     float speed;
     bool canJump;
     int jumpCounter;
@@ -41,8 +49,7 @@ typedef struct Move {
     int speed;
 } Move;
 
-typedef struct EnvItem
-{
+typedef struct EnvItem {
     Texture2D photo;
     Rectangle rect;
     Move if_dynamic;
@@ -68,6 +75,7 @@ typedef struct Trigger {
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
 void UpdateBoards(Player *player, EnvItem *board, int boardLength, int delta);
+void UpdateLava(Lava *lava, float delta);
 void FixCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 
 #endif

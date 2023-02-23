@@ -19,13 +19,7 @@
 const int screenWidth = 800;
 const int screenHeight = 800;
 
-void UpdateLava(Lava *lava, float delta);
-//------------------------------------------------------------------------------------
-// Program main entry point
-//------------------------------------------------------------------------------------
-int main(void)
-{
-    // Initialization
+int main(void) {
     InitWindow(screenWidth, screenHeight, "Endgame");
 
     /* INIT LAVA */
@@ -43,20 +37,19 @@ int main(void)
     /* END LAVA */
 
     /* INIT CHARACTER */
-    Texture2D character = LoadTexture("resources/textures/character_1.png");
-    character.height /= 2;
-    character.width /= 2;
-
-    unsigned numFrames = 24;
-    Rectangle frameRec = { 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
-
-    unsigned frameDelay = 1;
-    unsigned frameDelayCounter = 0;
-    unsigned frameIndex = 0;
-
-
     Player player = {0};
     player.position = (Vector2){(GetScreenWidth() / 4.0f), 800};
+    player.texture2D = LoadTexture("resources/textures/character_1.png");
+    player.texture2D.width /= 2;
+    player.texture2D.height /= 2;
+
+    player.frameRect = (Rectangle){ 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
+
+    player.frames = 24;
+    player.frameDelay = 1;
+    player.frameDelayCounter = 0;
+    player.frameIndex = 0;
+
     player.speed = 0;
     player.canJump = false;
     player.playerStatus = PLAYER_STATUS_WAIT;
@@ -175,14 +168,16 @@ int main(void)
         }
 
 
-        ++frameDelayCounter;
-        if(frameDelayCounter > frameDelay) {
-            frameDelayCounter = 0;
+        /* INIT PLAYER FRAMES */
+        ++player.frameDelayCounter;
+        if(player.frameDelayCounter > player.frameDelay) {
+            player.frameDelayCounter = 0;
 
-            ++frameIndex;
-            frameIndex %= numFrames;
-            frameRec.y = (float) PLAYER_FRAME_HEIGHT * frameIndex;
+            ++player.frameIndex;
+            player.frameIndex %= player.frames;
+            player.frameRect.y = (float) PLAYER_FRAME_HEIGHT * player.frameIndex;
         }
+        /* END PLAYER FRAMES */
 
         if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[17];
@@ -196,7 +191,7 @@ int main(void)
 
         /* FIX CAMERA */
         FixCameraCenterInsideMap(&camera, &player, envItems, envItemsLength, deltaTime, screenWidth, screenHeight);
-      
+
         /* START DRAWING */
         BeginDrawing();
         ClearBackground(BLANK);
@@ -216,35 +211,34 @@ int main(void)
         }
 
         //TODO: DELETE AFTER
-        //DrawRectangleRec(playerRect, BLANK);
+        DrawRectangleRec(player.frameRect, RED);
 
         /* LAVA */
         DrawTexture(lava.texture2D, lava.rect.x, lava.rect.y, WHITE);
 
         /* CHARACTER */
         if (player.playerStatus == PLAYER_STATUS_MOVE_RIGHT) {
-            if(frameRec.width < 0) {
-                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            if(player.frameRect.width < 0) {
+                player.frameRect.width = -PLAYER_FRAME_WIDTH_RUN;
             }
-            frameRec.x = PLAYER_FRAME_X;
-            frameRec.width = PLAYER_FRAME_WIDTH_RUN;
+            player.frameRect.x = PLAYER_FRAME_X;
+            player.frameRect.width = PLAYER_FRAME_WIDTH_RUN;
         } else if (player.playerStatus == PLAYER_STATUS_MOVE_LEFT) {
-            if(frameRec.width > 0) {
-                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            if(player.frameRect.width > 0) {
+                player.frameRect.width = -PLAYER_FRAME_WIDTH_RUN;
             }
-            frameRec.x = PLAYER_FRAME_X;
+            player.frameRect.x = PLAYER_FRAME_X;
         } else if (player.playerStatus == PLAYER_STATUS_WAIT) {
-            frameRec.x = 0;
-            frameRec.width = PLAYER_FRAME_WIDTH_WAIT;
+            player.frameRect.x = 0;
+            player.frameRect.width = PLAYER_FRAME_WIDTH_WAIT;
         }
 
-        DrawTextureRec(character, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
+        DrawTextureRec(player.texture2D, player.frameRect, (Vector2) { playerRect.x, playerRect.y}, WHITE);
 
         EndMode2D();
         EndDrawing();
 
         /* EMD DRAWING */
-       
     }
 
     /* END GAME LOOP */
@@ -254,10 +248,12 @@ int main(void)
     UnloadTexture(lava.texture2D);
     UnloadImage(lava.animatedImage);
 
+    UnloadTexture(player.texture2D);
+
     /* END UNLOAD TEXTURES */
 
     CloseWindow();
-   
+
     return 0;
 }
 
@@ -287,7 +283,8 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     } else if (IsKeyDown(KEY_RIGHT)) {
         player->position.x += PLAYER_HOR_SPD * delta;
         player->playerStatus = PLAYER_STATUS_MOVE_RIGHT;
-    } else {
+    }
+    else {
         player->playerStatus = PLAYER_STATUS_WAIT;
     }
 
@@ -298,25 +295,22 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
     }
 
     //check if the character comes beyond the boundaries of the card
-    if (player->position.y > envItems[3].rect.y)
-    {
+    if (player->position.y > envItems[3].rect.y) {
         if (player->position.x - (playerRect.width / 2) <= envItems[3].rect.width)
             player->position.x = envItems[3].rect.width + (playerRect.width / 2);
         if (player->position.x + (playerRect.width / 2) >= screenWidth-envItems[3].rect.width)
             player->position.x = screenWidth-envItems[3].rect.width - (playerRect.width / 2);
     }
-    else
-    {
+    else {
         if (player->position.x - (playerRect.width / 2) <= 0)
             player->position.x = playerRect.width / 2;
         if (player->position.x + (playerRect.width / 2) >= screenWidth)
             player->position.x = screenWidth - (playerRect.width / 2);
     }
+
     int hitObstacle = 0;
     Vector2 *p = &(player->position);
-
-    for (int i = 0; i < envItemsLength; i++)
-    {
+    for (int i = 0; i < envItemsLength; i++) {
         EnvItem *ei = envItems + i;
 
         if (ei->blocking &&
@@ -330,29 +324,25 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
             p->y = ei->rect.y;
             *index = i;
 
-            if (ei->if_dynamic.moving == true)
-            {
+            if (ei->if_dynamic.moving == true) {
                 p->x = ei->rect.x + ei->rect.width / 2;
             }
+
             *destroy = ei->destroy;
         }
     }
 
-    if (!hitObstacle)
-    {
+    if (!hitObstacle) {
         player->position.y += player->speed * delta;
         player->speed += G * delta;
-        if (player->jumpCounter < PLAYER_JUMP_LIMIT)
-        {
+        if (player->jumpCounter < PLAYER_JUMP_LIMIT) {
             player->canJump = true;
         }
-        else
-        {
+        else {
             player->canJump = false;
         }
     }
-    else
-    {
+    else {
         player->canJump = true;
         player->jumpCounter = 0;
     }
