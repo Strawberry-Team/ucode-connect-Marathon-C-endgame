@@ -21,6 +21,17 @@ typedef struct Player {
     PlayerStatus playerStatus;
 } Player;
 
+typedef struct Lava {
+    Rectangle rect;
+    int frameDelay;
+    unsigned int nextFrameDataOffset;
+    int frame;
+
+
+    float speedMultiplier;
+
+} Lava;
+
 typedef struct Move {
     bool moving;
     int speed;
