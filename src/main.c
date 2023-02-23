@@ -6,6 +6,17 @@
 #define PLAYER_HOR_SPD 220.0f
 #define PLAYER_JUMP_LIMIT 2
 
+
+#define PLAYER_FRAME_WIDTH_WAIT 72.5f
+#define PLAYER_FRAME_WIDTH_RUN 77.0f
+
+#define PLAYER_FRAME_HEIGHT 213.0f
+#define PLAYER_FRAME_X 70.5f
+
+#define PLAYER_WIDTH 76.0f
+#define PLAYER_HEIGHT 100.0f
+
+
 const int screenWidth = 800;
 const int screenHeight = 800;
 
@@ -19,7 +30,6 @@ int main(void)
 {
     // Initialization
     //--------------------------------------------------------------------------------------
-
     InitWindow(screenWidth, screenHeight, "Endgame");
 
     int animFrames = 0;
@@ -35,23 +45,21 @@ int main(void)
 
     Rectangle lava = { 100, 1000, 600, 951 };
 
-    float deltaTime = 0.0f;
+    float deltaTime;
     float lastFrameTime = GetTime();
     int lavaSpeedMultiplier = 1;
 
-    const char *filename = "scarfy.png";
+    const char *filename = "resources/textures/character_1.png";
     Texture2D scarfy = LoadTexture(filename);
     scarfy.height /= 2;
     scarfy.width /= 2;
 
-    unsigned numFrames = 6;
-    int frameWidth = scarfy.width / numFrames;
-    Rectangle frameRec = { 0.0f, 0.0f, (float)frameWidth, (float)scarfy.height};
+    unsigned numFrames = 24;
+    Rectangle frameRec = { 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
 
-    TraceLog(LOG_INFO, "Player X: [%d]; Player Y: [%d]", frameRec.width, frameRec.height);
     Vector2 scarfyPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
     Vector2 scarfyVelocity = {0.0f,0.0f};
-    unsigned frameDelay = 5;
+    unsigned frameDelay = 1;
     unsigned frameDelayCounter = 0;
     unsigned frameIndex = 0;
 
@@ -60,6 +68,7 @@ int main(void)
     player.position = (Vector2){(GetScreenWidth() / 4.0f), 800};
     player.speed = 0;
     player.canJump = false;
+    player.playerStatus = PLAYER_STATUS_WAIT;
 
     EnvItem envItems[] = {
         {{0, 0, screenWidth, screenHeight}, {false, 0}, 0, false, 1, LIGHTGRAY},
@@ -118,7 +127,8 @@ int main(void)
             framelava = 0;
         }
 
-        Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
+        Rectangle playerRect = {player.position.x - (PLAYER_WIDTH / 2), player.position.y - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT - 20};
+        //Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
 
         for (int i = 0; i < triggersLength; i++) {
             int isCollision = CheckCollisionRecs(playerRect, triggers[i].rect);
@@ -153,19 +163,18 @@ int main(void)
             framesCounter++;
         }
 
-        bool scarfyMoving = player.position.x != 0.0f; //|| player.position.y != 0.0f;
         //----------------------------------------------------------------------------------
         scarfyPosition = Vector2Add(scarfyPosition, scarfyVelocity);
         ++frameDelayCounter;
         if(frameDelayCounter > frameDelay) {
             frameDelayCounter = 0;
 
-            if(scarfyMoving) {
-                ++frameIndex;
-                frameIndex %= numFrames;
-                frameRec.x = (float) frameWidth * frameIndex;
-            }
+            ++frameIndex;
+            frameIndex %= numFrames;
+            frameRec.y = (float) PLAYER_FRAME_HEIGHT * frameIndex;
         }
+
+        //TraceLog(LOG_INFO, "Player Status: [%d]", player.playerStatus);
 
         if ((((framesCounter / 180) % 3) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[5];
@@ -198,13 +207,30 @@ int main(void)
             break;
         }
 
-        //DrawRectangleRec(playerRect, RED);
+        DrawRectangleRec(playerRect, BLANK);
         DrawTexture(texLavaAnim, lava.x, lava.y, WHITE);
 
 
+        DrawRectangleRec(frameRec, GREEN);
+
+        //TODO: это нужно для определения поворота текстуры.
+        if (player.playerStatus == PLAYER_STATUS_MOVE_RIGHT) {
+            if(frameRec.width < 0) {
+                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            }
+            frameRec.x = PLAYER_FRAME_X;
+            frameRec.width = PLAYER_FRAME_WIDTH_RUN;
+        } else if (player.playerStatus == PLAYER_STATUS_MOVE_LEFT) {
+            if(frameRec.width > 0) {
+                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            }
+            frameRec.x = PLAYER_FRAME_X;
+        } else if (player.playerStatus == PLAYER_STATUS_WAIT) {
+            frameRec.x = 0;
+            frameRec.width = PLAYER_FRAME_WIDTH_WAIT;
+        }
 
         DrawTextureRec(scarfy, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
-        //DrawTextureRec(scarfy, frameRec, scarfyPosition, WHITE);
 
         EndMode2D();
 
@@ -240,20 +266,31 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
 {
     *destroy = false;
     Rectangle playerRect = {player->position.x - 35, player->position.y - 70, 70, 70};
-    if (IsKeyDown(KEY_LEFT))
+    if (IsKeyDown(KEY_LEFT)) {
         player->position.x -= PLAYER_HOR_SPD * delta;
-    if (player->position.x - (playerRect.width / 2) <= 0)
-        player->position.x = (playerRect.width / 2);
-    if (IsKeyDown(KEY_RIGHT))
+        player->playerStatus = PLAYER_STATUS_MOVE_LEFT;
+    } else if (IsKeyDown(KEY_RIGHT)) {
         player->position.x += PLAYER_HOR_SPD * delta;
-    if (player->position.x + (playerRect.width / 2) >= screenWidth)
-        player->position.x = screenWidth - (playerRect.width / 2);
-    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT)
-    {
+        player->playerStatus = PLAYER_STATUS_MOVE_RIGHT;
+    } else {
+        player->playerStatus = PLAYER_STATUS_WAIT;
+    }
+
+    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT) {
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
         player->jumpCounter += 1;
     }
+
+    if (player->position.x + (playerRect.width / 2) >= screenWidth) {
+        player->position.x = screenWidth - (playerRect.width / 2);
+    }
+
+    if (player->position.x - (playerRect.width / 2) <= 0) {
+        player->position.x = (playerRect.width / 2);
+    }
+
+    //TraceLog(LOG_INFO, "Player X: [%d]; Player Y: [%d]", player->position.x, player->position.y);
 
     int hitObstacle = 0;
     Vector2 *p = &(player->position);

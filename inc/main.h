@@ -5,22 +5,28 @@
 #include "../resources/framework/raylib/src/raymath.h"
 #include <math.h>
 
-typedef struct Player
-{
+typedef enum {
+    PLAYER_STATUS_MOVE_LEFT = 0,
+    PLAYER_STATUS_MOVE_RIGHT = 1,
+    PLAYER_STATUS_MOVE_UP = 2,
+    PLAYER_STATUS_MOVE_DOWN = 3,
+    PLAYER_STATUS_WAIT = 4
+} PlayerStatus;
+
+typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
     int jumpCounter;
+    PlayerStatus playerStatus;
 } Player;
 
-typedef struct Move
-{
+typedef struct Move {
     bool moving;
     int speed;
 } Move;
 
-typedef struct EnvItem
-{
+typedef struct EnvItem {
     Rectangle rect;
     Move if_dynamic;
     int blocking;
