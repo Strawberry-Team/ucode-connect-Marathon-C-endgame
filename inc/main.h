@@ -5,17 +5,23 @@
 #include "../resources/framework/raylib/src/raymath.h"
 #include <math.h>
 
-typedef struct Player
-{
-    
+typedef enum {
+    PLAYER_STATUS_MOVE_LEFT = 0,
+    PLAYER_STATUS_MOVE_RIGHT = 1,
+    PLAYER_STATUS_MOVE_UP = 2,
+    PLAYER_STATUS_MOVE_DOWN = 3,
+    PLAYER_STATUS_WAIT = 4
+} PlayerStatus;
+
+typedef struct Player {
     Vector2 position;
     float speed;
     bool canJump;
     int jumpCounter;
+    PlayerStatus playerStatus;
 } Player;
 
-typedef struct Move
-{
+typedef struct Move {
     bool moving;
     int speed;
 } Move;
@@ -32,18 +38,21 @@ typedef struct EnvItem
 } EnvItem;
 
 typedef enum {
-    INCREASE_LAVA_SPEED = 0
-} EventType;
+    TRIGGER_TYPE_TAKE_TREASURE = 0,
+    TRIGGER_TYPE_START_LAVA = 1,
+    TRIGGER_TYPE_INCREASE_LAVA_SPEED = 2
+} TriggerType;
 
-typedef struct EventCheckPoint {
+typedef struct Trigger {
     Rectangle rect;
     Color color;
     bool isActive;
-    EventType eventType;
-} EventCheckPoint;
+    TriggerType eventType;
+} Trigger;
 
 void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float delta, bool *destroy, int *index);
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
+void UpdateBoards(Player *player, EnvItem *board, int boardLength, int delta);
 void FixCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
 
 #endif

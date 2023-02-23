@@ -2,42 +2,86 @@
 #include "../inc/main.h"
 
 #define G 680
-#define PLAYER_JUMP_SPD 320.0f
+#define PLAYER_JUMP_SPD 340.0f
 #define PLAYER_HOR_SPD 220.0f
-#define PLAYER_JUMP_LIMIT 10
-#define LAVA_SPEED 25
-#define LAVA_SPEED_MULTIPLIER 1.3
+#define PLAYER_JUMP_LIMIT 2
+#define PLAYER_FRAME_WIDTH_WAIT 72.5f
+#define PLAYER_FRAME_WIDTH_RUN 77.0f
+
+#define PLAYER_FRAME_HEIGHT 213.0f
+#define PLAYER_FRAME_X 70.5f
+
+#define PLAYER_WIDTH 76.0f
+#define PLAYER_HEIGHT 100.0f
+
 
 const int screenWidth = 800;
 const int screenHeight = 800;
 
-void UpdateBoards(Player *player, EnvItem *board, int boardLength, int delta);
+int LAVA_SPEED = 0;
+float LAVA_SPEED_MULTIPLIER = 1.2;
 
+//------------------------------------------------------------------------------------
+// Program main entry point
+//------------------------------------------------------------------------------------
 int main(void)
 {
-    
+    // Initialization
     InitWindow(screenWidth, screenHeight, "Endgame");
 //-------------lava-----------
 
+    int animFrames = 0;
+
+    Image imLavaAnim = LoadImageAnim("resources/textures/lava.gif", &animFrames);
+    Texture2D texLavaAnim = LoadTextureFromImage(imLavaAnim);
+
+    unsigned int nextFrameDataOffset = 0;
+
+    int currentAnimFrameLava = 0;       // Current animation frame to load and draw
+    int frameDelaylava = 20;             // Frame delay to switch between animation frames
+    int framelava = 0;
+
     Rectangle lava = {0, 1000, 800, 1000};
     Texture2D texture = LoadTexture("resources/textures/brick.png");
-    float deltaTime = 0.0f;
+    float deltaTime;
     float lastFrameTime = GetTime();
     int lavaSpeedMultiplier = 1;
 //-------------player-----------
 
+    const char *filename = "resources/textures/character_1.png";
+    Texture2D scarfy = LoadTexture(filename);
+    scarfy.height /= 2;
+    scarfy.width /= 2;
+
+    unsigned numFrames = 24;
+    Rectangle frameRec = { 0, 20.0f, PLAYER_FRAME_WIDTH_WAIT, PLAYER_FRAME_HEIGHT};
+
+    Vector2 scarfyPosition = {screenWidth / 2.0f, screenHeight / 2.0f};
+    Vector2 scarfyVelocity = {0.0f,0.0f};
+    unsigned frameDelay = 1;
+    unsigned frameDelayCounter = 0;
+    unsigned frameIndex = 0;
+
+
     Player player = {0};
-    player.position = (Vector2){300, 800};
+    player.position = (Vector2){(GetScreenWidth() / 4.0f), 800};
     player.speed = 0;
     player.canJump = false;
-//-------------map texture------
 
+    //-------------map texture------
     Texture2D stat = LoadTexture("resources/textures/static.png");
     Texture2D dynamic = LoadTexture("resources/textures/dynamic.png");
     Texture2D board = LoadTexture("resources/textures/board.png");
     Texture2D flour = LoadTexture("resources/textures/flour.png");
     Texture2D back = LoadTexture("resources/textures/back.png");
     Texture2D pyramid = LoadTexture("resources/textures/pyramid.png");
+    Texture2D stat = LoadTexture("resources/textures/static.png");
+    Texture2D dynamic = LoadTexture("resources/textures/dynamic.png");
+    Texture2D board = LoadTexture("resources/textures/board.png");
+    Texture2D flour = LoadTexture("resources/textures/flour.png");
+    Texture2D back = LoadTexture("resources/textures/back.png");
+    Texture2D pyramid = LoadTexture("resources/textures/pyramid.png");
+    player.playerStatus = PLAYER_STATUS_WAIT;
 
     EnvItem envItems[] = {
         {pyramid, {0, -700, screenWidth, 400}, {false, 0}, 0, false, 1,WHITE},
@@ -74,16 +118,14 @@ int main(void)
     camera.zoom = 1.0f;
     int framesCounter = 0;
 
+
 //------------- event-----
-
-    EventCheckPoint eventCheckPoint = {0};
-    eventCheckPoint.rect = (Rectangle){0, 500, screenWidth, 20};
-    eventCheckPoint.color = BLUE;
-    eventCheckPoint.isActive = true;
-    eventCheckPoint.eventType = INCREASE_LAVA_SPEED;
-    EventCheckPoint events[] = {eventCheckPoint};
-    int eventsLength = sizeof(events) / sizeof(events[0]);
-
+    Trigger triggers[] = {
+            {{(GetScreenWidth() / 2.0f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE},
+            {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA},
+            {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED},
+    };
+    int triggersLength = sizeof(triggers) / sizeof(triggers[0]);
 //------------------------------
     SetTargetFPS(60);
 
@@ -98,13 +140,47 @@ int main(void)
         // Update the position of the lava object
         lava.y -= LAVA_SPEED * deltaTime * lavaSpeedMultiplier;
 
-        //Update after event
-        for (int i = 0; i < eventsLength; i++) {
-            int isCollision = CheckCollisionRecs(playerRect, events[i].rect);
-            // TraceLog(LOG_INFO, "Collision: [%d]; ScreenWith: [%d]", test, GetScreenWidth());
-            if (isCollision && events[i].eventType == INCREASE_LAVA_SPEED && events[i].isActive) {
-                lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
-                events[i].isActive = false;
+        framelava++;
+        if (framelava >= frameDelaylava)
+        {
+            // Move to next frame
+            // NOTE: If final frame is reached we return to first frame
+            currentAnimFrameLava++;
+            if (currentAnimFrameLava >= animFrames) currentAnimFrameLava = 0;
+
+            // Get memory offset position for next frame data in image.data
+            nextFrameDataOffset = imLavaAnim.width*imLavaAnim.height*4*currentAnimFrameLava;
+
+            // Update GPU texture data with next frame image data
+            // WARNING: Data size (frame size) and pixel format must match already created texture
+            UpdateTexture(texLavaAnim, ((unsigned char *)imLavaAnim.data) + nextFrameDataOffset);
+
+            framelava = 0;
+        }
+
+        Rectangle playerRect = {player.position.x - (PLAYER_WIDTH / 2), player.position.y - PLAYER_HEIGHT, PLAYER_WIDTH, PLAYER_HEIGHT - 20};
+        //Rectangle playerRect = {player.position.x - frameRec.width, player.position.y - frameRec.height, frameRec.width, frameRec.height};
+
+        for (int i = 0; i < triggersLength; i++) {
+            int isCollision = CheckCollisionRecs(playerRect, triggers[i].rect);
+            if (isCollision && triggers[i].isActive) {
+                if (triggers[i].eventType == TRIGGER_TYPE_TAKE_TREASURE) {
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_TAKE_TREASURE");
+                }
+
+                if (triggers[i].eventType == TRIGGER_TYPE_START_LAVA) {
+                    LAVA_SPEED = 30;
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
+                }
+
+                if (triggers[i].eventType == TRIGGER_TYPE_INCREASE_LAVA_SPEED) {
+                    lavaSpeedMultiplier += LAVA_SPEED_MULTIPLIER;
+                    frameDelaylava = 15;
+                    triggers[i].isActive = false;
+                    TraceLog(LOG_INFO, "TRIGGER_TYPE_INCREASE_LAVA_SPEED");
+                }
             }
         }
 
@@ -119,6 +195,19 @@ int main(void)
             framesCounter++;
         }
 
+        //----------------------------------------------------------------------------------
+        scarfyPosition = Vector2Add(scarfyPosition, scarfyVelocity);
+        ++frameDelayCounter;
+        if(frameDelayCounter > frameDelay) {
+            frameDelayCounter = 0;
+
+            ++frameIndex;
+            frameIndex %= numFrames;
+            frameRec.y = (float) PLAYER_FRAME_HEIGHT * frameIndex;
+        }
+
+        //TraceLog(LOG_INFO, "Player Status: [%d]", player.playerStatus);
+        
         if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true) {
             envItems[index] = envItems[17];
             framesCounter = 0;
@@ -144,12 +233,9 @@ int main(void)
             DrawTextureV(envItems[i].photo, vector,envItems[i].color);
         }
         //events drawing
-        for (int i = 0; i < eventsLength; i++)
-        {
-            if (events[i].isActive)
-            {
-
-                DrawRectangleRec(events[i].rect, events[i].color);
+        for (int i = 0; i < triggersLength; i++) {
+            if (triggers[i].isActive) {
+                DrawRectangleRec(triggers[i].rect, triggers[i].color);
             }
         }
 
@@ -159,15 +245,38 @@ int main(void)
             break;
         }
 
-        DrawRectangleRec(playerRect, RED);
-        DrawRectangleRec(lava, RED);
+        DrawRectangleRec(playerRect, BLANK);
+        DrawTexture(texLavaAnim, lava.x, lava.y, WHITE);
+
+
+        DrawRectangleRec(frameRec, GREEN);
+
+        //TODO: это нужно для определения поворота текстуры.
+        if (player.playerStatus == PLAYER_STATUS_MOVE_RIGHT) {
+            if(frameRec.width < 0) {
+                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            }
+            frameRec.x = PLAYER_FRAME_X;
+            frameRec.width = PLAYER_FRAME_WIDTH_RUN;
+        } else if (player.playerStatus == PLAYER_STATUS_MOVE_LEFT) {
+            if(frameRec.width > 0) {
+                frameRec.width = -PLAYER_FRAME_WIDTH_RUN;
+            }
+            frameRec.x = PLAYER_FRAME_X;
+        } else if (player.playerStatus == PLAYER_STATUS_WAIT) {
+            frameRec.x = 0;
+            frameRec.width = PLAYER_FRAME_WIDTH_WAIT;
+        }
+
+        DrawTextureRec(scarfy, frameRec, (Vector2) { playerRect.x, playerRect.y}, WHITE);
 
         EndMode2D();
 
         EndDrawing();
        
     }
-
+    UnloadTexture(texLavaAnim);   // Unload texture
+    UnloadImage(imLavaAnim);
     // De-Initialization
 
     CloseWindow(); // Close window and OpenGL context
@@ -195,14 +304,17 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
 {
     *destroy = false;
     Rectangle playerRect = {player->position.x - 35, player->position.y - 70, 70, 70};
-    if (IsKeyDown(KEY_LEFT))
+    if (IsKeyDown(KEY_LEFT)) {
         player->position.x -= PLAYER_HOR_SPD * delta;
-    
-    if (IsKeyDown(KEY_RIGHT))
+        player->playerStatus = PLAYER_STATUS_MOVE_LEFT;
+    } else if (IsKeyDown(KEY_RIGHT)) {
         player->position.x += PLAYER_HOR_SPD * delta;
-  
-    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT)
-    {
+        player->playerStatus = PLAYER_STATUS_MOVE_RIGHT;
+    } else {
+        player->playerStatus = PLAYER_STATUS_WAIT;
+    }
+
+    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT) {
         player->speed = -PLAYER_JUMP_SPD;
         player->canJump = false;
         player->jumpCounter += 1;
@@ -223,7 +335,6 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         if (player->position.x + (playerRect.width / 2) >= screenWidth)
             player->position.x = screenWidth - (playerRect.width / 2);
     }
-
     int hitObstacle = 0;
     Vector2 *p = &(player->position);
 
