@@ -25,20 +25,20 @@
 const int screenWidth = 800;
 const int screenHeight = 800;
 
-static Lava lava = { 0 };
-static Player player = { 0 };
-static Camera2D camera = { 0 };
+static Lava lava = {};
+static Player player = {};
+static Camera2D camera = {};
 
-static Trigger triggers[TRIGGER_LENGTH] = { 0 };
+static Trigger triggers[TRIGGER_LENGTH] = {};
 
 
-static EnvItem envItems[ENV_ITEMS_LENGTH] = { 0 };
+static EnvItem envItems[ENV_ITEMS_LENGTH] = {};
 static bool pause = false;
 static bool destroy = false;
 static int index;
 static int framesCounter = 0;
 
-static Rectangle playerRect = { 0 };
+static Rectangle playerRect = {};
 
 static Texture2D player_temp;
 static int status_load = 1;
@@ -738,7 +738,7 @@ void InitGame() {
 
 
     // Broken Block
-    envItems[0] = (EnvItem) {staticBlock, {0, 0, 0, 0}, {false, 0}, 0, false, 0, BLANK};
+    envItems[0] = (EnvItem) {staticBlock, {0, 0, 0, 0}, {false, 0}, 0, false, 1, BLANK};
 
     // Backgrounds
     envItems[1] = (EnvItem) {topBackground,  {0,                  -6438,               screenWidth, 308},          {false, 0}, 0, false, 1, RAYWHITE};
