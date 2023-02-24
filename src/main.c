@@ -20,7 +20,7 @@
 #define BUTTON_FRAMES 3
 
 #define TRIGGER_LENGTH 5
-#define ENV_ITEMS_LENGTH 19
+#define ENV_ITEMS_LENGTH 79
 
 const int screenWidth = 800;
 const int screenHeight = 800;
@@ -52,6 +52,7 @@ void InitGame();
 void UpdatePlayersEndWin(Texture2D *players);
 void WorkMusic(Music temp_music);
 void ChangeMusic(Music music);
+
 int main(void) {
     InitWindow(screenWidth, screenHeight, "Endgame");
 
@@ -149,6 +150,8 @@ int main(void) {
     Texture2D stand = LoadTexture("resources/textures/stand.png");
     Texture2D almaz = LoadTexture("resources/textures/almaz.png");
     Texture2D flag = LoadTexture("resources/textures/flag.png");
+    flag.width /= 1.5f;
+    flag.height /= 1.5f;
     Rectangle almazRec = { 450, 753, (float)almaz.width, (float)almaz.height};
 
     /**
@@ -301,12 +304,12 @@ int main(void) {
             /* END PLAYER FRAMES */
 
             if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 1) && envItems[index].destroy == true) {
-                envItems[index] = envItems[17];
+                envItems[index] = envItems[0];
                 framesCounter = 0;
             }
 
             if ((((framesCounter / (envItems[index].destroy_time * 60)) % envItems[index].destroy_time) == 0) && envItems[index].destroy == true && envItems[index].destroy_time == 1 ) {
-                envItems[index] = envItems[17];
+                envItems[index] = envItems[0];
                 framesCounter = 0;
             }
 
@@ -516,8 +519,6 @@ int main(void) {
         BeginDrawing();
         ClearBackground(BLANK);
 
-        //TODO: выключать музыку при касании с лавой, для
-
         if (currentScreen == GAME_SCREEN_START) {
             DrawTexture(start_title,0 , 0 , WHITE );
             DrawText("START to start the game ",20, 10, 16, DARKBROWN );
@@ -560,7 +561,7 @@ int main(void) {
             //DrawRectangleRec(player.frameRect, RED);
 
             /* FLAG */
-            DrawTexture(flag,518, -505, WHITE);
+            DrawTexture(flag,730, -6216, WHITE);
             /* STAND */
             DrawTexture(stand,450, 753, WHITE);
             /* ALMAZ */
@@ -594,7 +595,7 @@ int main(void) {
                 almaz.id = 0;
                 DrawText("Hooray, I found the treasure!\n"
                          "Something is getting hot...",
-                         450, 450, 15, WHITE);
+                         450, 550, 15, WHITE);
             }
         } else if (currentScreen == GAME_SCREEN_ENDING) {
             DrawTexture(title_intro,0 , 0 , WHITE );
@@ -725,48 +726,125 @@ void InitGame() {
     camera.target = player.position;
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 1.2f;
+    camera.zoom = 1.3f;
     /* END CAMERA */
 
     /* INIT TRIGGERS */
     triggers[0] = (Trigger) {{(GetScreenWidth() / 1.77f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE};
-    triggers[1] = (Trigger) {{(GetScreenWidth() / 1.5f), -430, 20, 50}, BLUE, true, TRIGGER_TYPE_END_FLAG};
+    triggers[1] = (Trigger) {{750, -6180, 20, 50}, BLUE, true, TRIGGER_TYPE_END_FLAG};
     triggers[2] = (Trigger) {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA};
     triggers[3] = (Trigger) {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED};
-    triggers[4] = (Trigger) {{(0), -420, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_LAVA_SHUTDOWN};
+    triggers[4] = (Trigger) {{(0), -6130, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_LAVA_SHUTDOWN};
     /* END TRIGGERS */
 
-    /* INIT MAP */
-    Texture2D staticPlatformTexture = LoadTexture("resources/textures/static.png");
-    Texture2D dynamicPlatformTexture = LoadTexture("resources/textures/dynamic.png");
-    Texture2D sideWallTexture = LoadTexture("resources/textures/board.png");
-    Texture2D floorBackgroundTexture = LoadTexture("resources/textures/flour.png");
-    Texture2D backgroundTexture = LoadTexture("resources/textures/back.png");
-    Texture2D finalBackgroundTexture = LoadTexture("resources/textures/pyramid.png");
+    /* INIT OF THE MAP */
+    Texture2D staticBlock = LoadTexture("resources/textures/block_static.png");
+    Texture2D crashingBlock1 = LoadTexture("resources/textures/block_crashing1.png");
+    Texture2D crashingBlock2 = LoadTexture("resources/textures/block_crashing2.png");
+    Texture2D movingBlock = LoadTexture("resources/textures/block_moving.png");
 
-    envItems[0] = (EnvItem) {finalBackgroundTexture, {0, -700, screenWidth, 400}, {false, 0}, 0, false, 1,WHITE};
-    envItems[1] = (EnvItem) {backgroundTexture, {0, -300, screenWidth, 1400}, {false, 0}, 0, false, 1, BROWN};
-    envItems[2] = (EnvItem) {floorBackgroundTexture, {0, 800, screenWidth, 200}, {false, 0}, 1, false, 1, BROWN};
-    envItems[3] = (EnvItem) {sideWallTexture, {0, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN};
-    envItems[4] = (EnvItem) {sideWallTexture, {700, -200, 100, 1000}, {false, 0}, 1, false, 1, BROWN};
-    envItems[5] = (EnvItem) {dynamicPlatformTexture, {350, 600, 100, 20}, {false, 0}, 1, true, 3, RED};
+    Texture2D topBackground = LoadTexture("resources/textures/wall_level_top.png");
+    Texture2D wallLeft = LoadTexture("resources/textures/wall_left.png");
+    Texture2D wallRight = LoadTexture("resources/textures/wall_right.png");
+    Texture2D wallBackground = LoadTexture("resources/textures/wall_background.png");
+    Texture2D wallBottom = LoadTexture("resources/textures/wall_bottom.png");
 
-    envItems[6] = (EnvItem) {dynamicPlatformTexture, {250, 450, 100, 20}, {true, 2}, 1, false, 1, DARKBROWN};
-    envItems[7] = (EnvItem) {staticPlatformTexture, {50, 700, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[8] = (EnvItem) {staticPlatformTexture, {0, 300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[9] = (EnvItem) {staticPlatformTexture, {400, 100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[10] = (EnvItem) {dynamicPlatformTexture, {200, 50, 100, 20}, {true, -2}, 1, true, 1, GREEN};
+    int blockHeight = 20;
+    int blockWidth = 100;
 
-    envItems[11] = (EnvItem) {staticPlatformTexture, {0, -50, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[12] = (EnvItem) {staticPlatformTexture, {80, -100, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[13] = (EnvItem) {dynamicPlatformTexture, {350, -150, 100, 20}, {true, 2}, 1, true, 1, GREEN};
-    envItems[14] = (EnvItem) {staticPlatformTexture, {0, -300, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
-    envItems[15] = (EnvItem) {staticPlatformTexture, {250, -380, 400, 20}, {false, 0}, 1, false, 1, DARKBROWN};
 
-    envItems[16] = (EnvItem) {staticPlatformTexture, {0, -700, 400, 20}, {false, 0}, 1, false, 1, BLANK};
-    envItems[17] = (EnvItem) {dynamicPlatformTexture, {300, 230, 100, 20}, {true, -1}, 1, true, 1, GREEN};
-    envItems[18] = (EnvItem) {staticPlatformTexture, {0, 0, 0, 0}, {false, 0}, 0, false, 0, BLANK};
-    /* END MAP */
+    // Broken Block
+    envItems[0] = (EnvItem) {staticBlock, {0, 0, 0, 0}, {false, 0}, 0, false, 0, BLANK};
+
+    // Backgrounds
+    envItems[1] = (EnvItem) {topBackground,  {0,                  -6438,               screenWidth, 308},          {false, 0}, 0, false, 1, RAYWHITE};
+    envItems[2] = (EnvItem) {wallBackground, {100,                -6130,               600, 6830}, {false, 0}, 0, false, 1, RAYWHITE};
+    envItems[3] = (EnvItem) {wallBottom,     {0,                  800,                screenWidth, 100},          {false, 0}, 1, false, 1, RAYWHITE};
+    envItems[4] = (EnvItem) {wallLeft,       {screenHeight-800, -6130,                100,         100},          {false, 0}, 1, false, 1, RAYWHITE};
+    envItems[5] = (EnvItem) {wallRight,      {screenHeight-100, -6130,                100,         100},          {false, 0}, 1, false, 1, RAYWHITE};
+    envItems[6] = (EnvItem) {staticBlock, {500, -6438, blockWidth, blockHeight}, {false, 0}, 1, false, 1, BLANK};
+
+    // LEVEL1
+    envItems[7] = (EnvItem) {staticBlock,    {180,                700,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 1
+    envItems[8] = (EnvItem) {staticBlock,    {320,                600,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 2
+    envItems[9] = (EnvItem) {staticBlock,    {500,                500,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 3
+    envItems[10] = (EnvItem) {staticBlock,    {600,                500,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 3
+    envItems[11] = (EnvItem) {staticBlock,    {400,                370,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 4
+    envItems[12] = (EnvItem) {staticBlock,    {250,                240,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 5
+    envItems[13] = (EnvItem) {staticBlock,    {100,                110,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};  // 6
+    envItems[14] = (EnvItem) {staticBlock,    {250,                -20,                 blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 7
+    envItems[15] = (EnvItem) {staticBlock,    {350,                -20,                 blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 7
+    envItems[16] = (EnvItem) {staticBlock,    {450,                -20,                 blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};   // 7
+    envItems[17] = (EnvItem) {staticBlock,    {100,                -150,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};  // 8
+    envItems[18] = (EnvItem) {staticBlock,    {600,                -150,                blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE};  // 9
+    envItems[19] = (EnvItem) {staticBlock,    {200,                -280,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 10
+    envItems[20] = (EnvItem) {staticBlock,    {500,                -280,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 11
+    envItems[21] = (EnvItem) {staticBlock,    {250,                -410,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 12
+    envItems[22] = (EnvItem) {staticBlock,    {350,                -410,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 12
+    envItems[23] = (EnvItem) {staticBlock,    {450,                -410,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 12
+    envItems[24] = (EnvItem) {staticBlock,    {100,                -540,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 13
+    envItems[25] = (EnvItem) {staticBlock,    {600,                -540,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 14
+    envItems[26] = (EnvItem) {staticBlock,    {100,                -670,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 15
+    envItems[27] = (EnvItem) {staticBlock,    {600,                -670,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 16
+    envItems[28] = (EnvItem) {staticBlock,    {100,                -800,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 17
+    envItems[29] = (EnvItem) {staticBlock,    {600,                -800,               blockWidth,  blockHeight},  {false, 0}, 1, false, 1, RAYWHITE}; // 18
+
+    //LEVEL2
+    envItems[30] = (EnvItem) {movingBlock, {200, -930, blockWidth, blockHeight}, {true, 2}, 1, false, 1, RAYWHITE}; // 19
+    envItems[31] = (EnvItem) {staticBlock, {600, -1060, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 20
+    envItems[32] = (EnvItem) {movingBlock, {600, -1190, blockWidth, blockHeight}, {true, -2}, 1, false, 1, RAYWHITE}; // 21
+    envItems[33] = (EnvItem) {staticBlock, {100, -1320, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 22
+    envItems[34] = (EnvItem) {movingBlock, {100, -1450, blockWidth, blockHeight}, {true,4}, 1, false, 1, RAYWHITE}; // 23
+    envItems[35] = (EnvItem) {staticBlock, {350, -1580, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 24
+    envItems[36] = (EnvItem) {movingBlock, {350, -1710, blockWidth, blockHeight}, {true, 2}, 1, false, 1, RAYWHITE}; // 25
+    envItems[37] = (EnvItem) {movingBlock, {350, -1840, blockWidth, blockHeight}, {true, -4}, 1, false, 1, RAYWHITE}; // 26
+    envItems[38] = (EnvItem) {staticBlock, {250, -1970, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 27
+    envItems[39] = (EnvItem) {staticBlock, {450, -1970, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 28
+    envItems[40] = (EnvItem) {movingBlock, {350, -2100, blockWidth, blockHeight}, {true, 4}, 1, false, 1, RAYWHITE}; // 29
+    envItems[41] = (EnvItem) {movingBlock, {450, -2230, blockWidth, blockHeight}, {true, -4}, 1, false, 1, RAYWHITE}; // 30
+    envItems[42] = (EnvItem) {movingBlock, {200, -2360, blockWidth, blockHeight}, {true, 4}, 1, false, 1, RAYWHITE}; // 31
+    envItems[43] = (EnvItem) {staticBlock, {100, -2490, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 32
+    envItems[44] = (EnvItem) {staticBlock, {300, -2490, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 33
+    envItems[45] = (EnvItem) {staticBlock, {400, -2490, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 33
+    envItems[46] = (EnvItem) {staticBlock, {600, -2490, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; // 34
+
+    //LEVEL3
+    envItems[47] = (EnvItem) {crashingBlock1, {100, -2620, blockWidth, blockHeight}, {false, 0}, 1, true, 3,RAYWHITE}; // 35
+    envItems[48] = (EnvItem) {crashingBlock1, {600, -2620, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //36
+    envItems[49] = (EnvItem) {movingBlock, {100, -2750, blockWidth, blockHeight}, {true, 4}, 1, false, 1, RAYWHITE}; //37
+    envItems[50] = (EnvItem) {staticBlock, {350, -2880, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; //38
+    envItems[51] = (EnvItem) {crashingBlock1, {200, -3010, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //39
+    envItems[52] = (EnvItem) {crashingBlock1, {500, -3010, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //40
+    envItems[53] = (EnvItem) {movingBlock, {350, -3140, blockWidth, blockHeight}, {true, -4}, 1, false, 1, RAYWHITE}; //41
+    envItems[54] = (EnvItem) {crashingBlock1, {100, -3270, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //42
+    envItems[55] = (EnvItem) {crashingBlock1, {600, -3270, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //43
+    envItems[56] = (EnvItem) {staticBlock, {350, -3400, blockWidth, blockHeight}, {false, 0}, 1, false, 1, RAYWHITE}; //44
+    envItems[57] = (EnvItem) {crashingBlock1, {200, -3530, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //45
+    envItems[58] = (EnvItem) {crashingBlock1, {350, -3660, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //46
+    envItems[59] = (EnvItem) {crashingBlock1, {500, -3790, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //47
+    envItems[60] = (EnvItem) {crashingBlock1, {350, -3920, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //48
+    envItems[61] = (EnvItem) {crashingBlock1, {200, -4050, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //49
+
+    // LEVEL4
+    envItems[62] = (EnvItem) {crashingBlock2, {350, -4180, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //50
+    envItems[63] = (EnvItem) {crashingBlock1, {350, -4310, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //51
+    envItems[64] = (EnvItem) {crashingBlock2, {500, -4440, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //52
+    envItems[65] = (EnvItem) {crashingBlock2, {200, -4440, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //53
+    envItems[66] = (EnvItem) {crashingBlock1, {100, -4570, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE}; //54
+    envItems[67] = (EnvItem) {crashingBlock1, {600, -4570, blockWidth, blockHeight}, {false, 0}, 1, true, 3, RAYWHITE};  //55
+    envItems[68] = (EnvItem) {movingBlock, {100, -4700, blockWidth, blockHeight}, {true, 4}, 1, false, 1, RAYWHITE}; //56
+    envItems[69] = (EnvItem) {crashingBlock2, {350, -4830, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //57
+    envItems[70] = (EnvItem) {crashingBlock2, {350, -4960, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //58
+    envItems[71] = (EnvItem) {movingBlock, {600, -5090, blockWidth, blockHeight}, {true, -4}, 1, false, 1, RAYWHITE}; //59
+    envItems[72] = (EnvItem) {crashingBlock2, {500, -5220, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //60
+    envItems[73] = (EnvItem) {crashingBlock2, {300, -5350, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //61
+    envItems[74] = (EnvItem) {crashingBlock2, {150, -5480, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //62
+    envItems[75] = (EnvItem) {movingBlock, {350, -5610, blockWidth, blockHeight}, {true, 4}, 1, false, 1, RAYWHITE}; //63
+    envItems[76] = (EnvItem) {crashingBlock2, {100, -5740, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //64
+    envItems[77] = (EnvItem) {crashingBlock2, {300, -5870, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //65
+    envItems[78] = (EnvItem) {crashingBlock2, {500, -6000, blockWidth, blockHeight}, {false, 0}, 1, true, 1, RAYWHITE}; //66
+
+    /* END OF THE MAP */
 }
 
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause)
