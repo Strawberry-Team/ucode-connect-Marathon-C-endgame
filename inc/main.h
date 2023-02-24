@@ -106,5 +106,9 @@ void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause);
 void UpdateBoards(Player *player, EnvItem *board, int boardLength, int delta);
 void UpdateLava(Lava *lava, float delta);
 void FixCameraCenterInsideMap(Camera2D *camera, Player *player, EnvItem *envItems, int envItemsLength, float delta, int width, int height);
+void InitGame();
+void UpdatePlayersEndWin(Texture2D *players);
+void WorkMusic(Music temp_music);
+void ChangeMusic(Music music);
 
 #endif

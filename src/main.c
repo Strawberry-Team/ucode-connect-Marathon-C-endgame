@@ -42,18 +42,13 @@ static Rectangle playerRect = { 0 };
 
 static Texture2D player_temp;
 static int status_load = 1;
-static int framesCounterforLoad = 0;
+static int framesCounterForLoad = 0;
 static float volume = 0.5f;
 
 static bool turn_music = false;
 static Music temp_music;
 
 static Texture2D almaz;
-
-void InitGame();
-void UpdatePlayersEndWin(Texture2D *players);
-void WorkMusic(Music temp_music);
-void ChangeMusic(Music music);
 
 int main(void) {
     InitWindow(screenWidth, screenHeight, "Endgame");
@@ -394,20 +389,20 @@ int main(void) {
             buttonBack.textureRect.y = buttonBack.buttonState * buttonBack.frameHeight;
             buttonEndBack.textureRect.y = buttonEndBack.buttonState * buttonEndBack.frameHeight;
             if (button_status == 3 || button_status == 4) {
-                //TODO: INIT GAME
+
                 InitGame();
 
                 lettersCount = 0;
                 button_status = 0;
                 status_load = 1;
-                framesCounterforLoad = 0;
+                framesCounterForLoad = 0;
 
             }
             if(lettersCount < 9) {
-                framesCounter++;
-                if ((((framesCounter / 10) % 3) == 1)) {
+                framesCounterForLoad++;
+                if ((((framesCounterForLoad / 10) % 3) == 1)) {
                     lettersCount++;
-                    framesCounter = 0;
+                    framesCounterForLoad = 0;
                 }
             }
             timePlayed = GetMusicTimePlayed(temp_music) / GetMusicTimeLength(temp_music);
@@ -499,7 +494,7 @@ int main(void) {
                 lettersCount = 0;
                 button_status = 0;
                 status_load = 1;
-                framesCounterforLoad = 0;
+                framesCounterForLoad = 0;
             }
             if(lettersCount < 8) {
                 framesCounter++;
@@ -632,28 +627,28 @@ int main(void) {
 }
 
 void UpdatePlayersEndWin(Texture2D *players) {
-        if(status_load != 6) {
-            framesCounterforLoad++;
-            //Every two seconds (120 frames) a new random value is generated
-            if (status_load == 1) {
-                player_temp = players[0];
-                status_load = 2;
-                framesCounterforLoad = 0;
-            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 2) {
-                player_temp = players[1];
-                status_load = 3;
-                framesCounterforLoad = 0;
-            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 3) {
-                player_temp = players[2];
-                status_load = 4;
-                framesCounterforLoad = 0;
-            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 4) {
-                player_temp = players[3];
-                status_load = 5;
-                framesCounterforLoad = 0;
-            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 5)
-                status_load = 6;
-        }
+    if(status_load != 6) {
+        framesCounterForLoad++;
+        //Every two seconds (120 frames) a new random value is generated
+        if (status_load == 1) {
+            player_temp = players[0];
+            status_load = 2;
+            framesCounterForLoad = 0;
+        } else if (((framesCounterForLoad / 30) % 2) == 1 && status_load == 2) {
+            player_temp = players[1];
+            status_load = 3;
+            framesCounterForLoad = 0;
+        } else if (((framesCounterForLoad / 30) % 2) == 1 && status_load == 3) {
+            player_temp = players[2];
+            status_load = 4;
+            framesCounterForLoad = 0;
+        } else if (((framesCounterForLoad / 30) % 2) == 1 && status_load == 4) {
+            player_temp = players[3];
+            status_load = 5;
+            framesCounterForLoad = 0;
+        } else if (((framesCounterForLoad / 30) % 2) == 1 && status_load == 5)
+            status_load = 6;
+    }
 }
 
 void WorkMusic(Music temp_music) {
@@ -838,16 +833,16 @@ void InitGame() {
 
 void UpdateBricks(EnvItem *envItems, int envItemsLength, bool pause)
 {
-    for (int i = 0; i < envItemsLength; i++)
-    {
-        if (envItems[i].if_dynamic.moving == true)
-        {
-            if (!pause)
+    for (int i = 0; i < envItemsLength; i++) {
+        if (envItems[i].if_dynamic.moving == true) {
+            if (!pause) {
                 envItems[i].rect.x += envItems[i].if_dynamic.speed;
+            }
 
             // Bounce box on x screen limits
-            if (((envItems[i].rect.x + envItems[i].rect.width) >= screenWidth-envItems[3].rect.width) || (envItems[i].rect.x <= envItems[3].rect.width))
+            if (((envItems[i].rect.x + envItems[i].rect.width) >= screenWidth-100) || (envItems[i].rect.x <=100)) {
                 envItems[i].if_dynamic.speed *= -1;
+            }
         }
     }
 }
@@ -874,18 +869,17 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         && player->canMove
         ) {
         player->speed = player->jumpCounter >= 1
-                ? (-PLAYER_JUMP_SPD / PLAYER_ADDITIONAL_JUMP_SPD_REDUCER)
-                : (-PLAYER_JUMP_SPD);
+                        ? (-PLAYER_JUMP_SPD / PLAYER_ADDITIONAL_JUMP_SPD_REDUCER)
+                        : (-PLAYER_JUMP_SPD);
         player->canJump = false;
         player->jumpCounter += 1;
     }
 
-    //check if the character comes beyond the boundaries of the card
-    if (player->position.y > envItems[3].rect.y) {
-        if (player->position.x - (playerRect.width / 2) <= envItems[3].rect.width)
-            player->position.x = envItems[3].rect.width + (playerRect.width / 2);
-        if (player->position.x + (playerRect.width / 2) >= screenWidth-envItems[3].rect.width)
-            player->position.x = screenWidth-envItems[3].rect.width - (playerRect.width / 2);
+    if (player->position.y >= -6130) {
+        if (player->position.x - (playerRect.width / 2) <= 100)
+            player->position.x = 100 + (playerRect.width / 2);
+        if (player->position.x + (playerRect.width / 2) >= screenWidth-100)
+            player->position.x = screenWidth-100 - (playerRect.width / 2);
     }
     else {
         if (player->position.x - (playerRect.width / 2) <= 0)
