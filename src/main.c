@@ -40,8 +40,18 @@ static int framesCounter = 0;
 
 static Rectangle playerRect = { 0 };
 
-void InitGame();
+static Texture2D player_temp;
+static int status_load = 1;
+static int framesCounterforLoad = 0;
+static float volume = 0.5f;
 
+static bool turn_music = false;
+static Music temp_music;
+
+void InitGame();
+void UpdatePlayersEndWin(Texture2D *players);
+void WorkMusic(Music temp_music);
+void ChangeMusic(Music music);
 int main(void) {
     InitWindow(screenWidth, screenHeight, "Endgame");
 
@@ -49,15 +59,12 @@ int main(void) {
     Texture2D end_player2 = LoadTexture("resources/textures/display/end_player2.png");
     Texture2D end_player3 = LoadTexture("resources/textures/display/end_player3.png");
     Texture2D end_player4 = LoadTexture("resources/textures/display/end_player4.png");
-    Texture2D end_player_temp = end_player1;
-
-    int status_load = 1;
-    int framesCounterforLoad = 0;
     Texture2D win_player1 = LoadTexture("resources/textures/display/win_player1.png");
     Texture2D win_player2 = LoadTexture("resources/textures/display/win_player2.png");
     Texture2D win_player3 = LoadTexture("resources/textures/display/win_player3.png");
     Texture2D win_player4 = LoadTexture("resources/textures/display/win_player4.png");
-    Texture2D win_player_temp = win_player1;
+    Texture2D players_end[4] = {end_player1,end_player2, end_player3, end_player4};
+    Texture2D players_win[4] = {win_player1, win_player2, win_player3, win_player4};
 
     InitAudioDevice();
     Music StartMusic = LoadMusicStream("resources/audio/StartMusic.mp3");
@@ -65,10 +72,9 @@ int main(void) {
     Music WaitingMusic = LoadMusicStream("resources/audio/WaitingMusic.mp3");
     Music GameOver = LoadMusicStream("resources/audio/GameOver.mp3");
     Music Win = LoadMusicStream("resources/audio/Win.mp3");
-    Music temp_music = StartMusic;
+    temp_music = StartMusic;
     PlayMusicStream(temp_music);
     float volume = 0.5f;
-
     bool turn_music = false;
     float timePlayed = 0.0f;
 
@@ -159,21 +165,7 @@ int main(void) {
 
         if (currentScreen == GAME_SCREEN_START) {
             {
-                UpdateMusicStream(temp_music);
-                if (IsKeyPressed(KEY_P)) {
-                    turn_music = !turn_music;
-
-                    if (turn_music) {
-                        SetMasterVolume(0);
-                    }
-                    else {
-                        SetMasterVolume(volume);
-                    }
-                }
-
-                if (IsKeyDown(KEY_MINUS) && volume > 0.0f) volume -= 0.1f;
-                else if (IsKeyDown(KEY_EQUAL) && volume < 1.0f) volume += 0.1f;
-                SetMusicVolume(temp_music, volume);
+                WorkMusic(temp_music);
 
                 mousePoint = GetMousePosition();
                 buttonStart.isAction = false;
@@ -211,9 +203,7 @@ int main(void) {
                 }
 
                 if (buttonStart.isAction && button_status == 1) {
-                    StopMusicStream(temp_music);
-                    temp_music = WaitingMusic;
-                    PlayMusicStream(temp_music);
+                    ChangeMusic(WaitingMusic);
                     currentScreen = GAME_SCREEN_GAMEPLAY;
                     // TODO: Any desired action
                 }
@@ -227,21 +217,7 @@ int main(void) {
             }
         }
         else if (currentScreen == GAME_SCREEN_GAMEPLAY) {
-            UpdateMusicStream(temp_music);
-            if (IsKeyPressed(KEY_P)) {
-                turn_music = !turn_music;
-
-                if (turn_music) SetMasterVolume(0);
-                else SetMasterVolume(volume);
-            }
-            if (IsKeyDown(KEY_MINUS) && volume > 0.0f) volume -= 0.1f;
-            else if (IsKeyDown(KEY_EQUAL) && volume < 1.0f) volume += 0.1f;
-            if (IsKeyDown(KEY_N)) {
-                StopMusicStream(temp_music);
-                temp_music = MainMusic;
-                PlayMusicStream(temp_music);
-            }
-            SetMusicVolume(temp_music, volume);
+            WorkMusic(temp_music);
 
             // Update the timer variables
             float currentFrameTime = GetTime();
@@ -257,9 +233,7 @@ int main(void) {
             UpdateLava(&lava, deltaTime);
             if (CheckCollisionRecs(lava.rect, playerRect)) {
 
-                StopMusicStream(temp_music);
-                temp_music = GameOver;
-                PlayMusicStream(temp_music);
+                ChangeMusic(GameOver);
                 currentScreen = GAME_SCREEN_ENDING;
             }
 
@@ -277,9 +251,7 @@ int main(void) {
                         lava.speed = LAVA_DEFAULT_SPEED;
                         triggers[i].isActive = false;
 
-                        StopMusicStream(temp_music);
-                        temp_music = MainMusic;
-                        PlayMusicStream(temp_music);
+                        ChangeMusic(MainMusic);
 
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
                     }
@@ -292,6 +264,7 @@ int main(void) {
                     }
 
                     if (triggers[i].eventType == TRIGGER_TYPE_LAVA_SHUTDOWN) {
+                        ChangeMusic(WaitingMusic);
                         lava.speed = 0;
                         triggers[i].isActive = false;
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_LAVA_SHUTDOWN");
@@ -301,9 +274,7 @@ int main(void) {
                         triggers[i].isActive = false;
                         currentScreen = GAME_SCREEN_WIN;
 
-                        StopMusicStream(temp_music);
-                        temp_music = Win;
-                        PlayMusicStream(temp_music);
+                        ChangeMusic(Win);
 
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_END_FLAG");
                     }
@@ -403,16 +374,12 @@ int main(void) {
             }
 
             if (buttonRetry.isAction && button_status == 3) {
-                StopMusicStream(temp_music);
-                temp_music = WaitingMusic;
-                PlayMusicStream(temp_music);
+                ChangeMusic(WaitingMusic);
                 currentScreen = GAME_SCREEN_GAMEPLAY;
                 // TODO: Any desired action
             }
             else if (buttonBack.isAction && button_status == 4) {
-                StopMusicStream(temp_music);
-                temp_music = StartMusic;
-                PlayMusicStream(temp_music);
+                ChangeMusic(StartMusic);
                 currentScreen = GAME_SCREEN_START;
             }
             else if (buttonEndBack.isAction && button_status == 5) {
@@ -442,39 +409,9 @@ int main(void) {
             timePlayed = GetMusicTimePlayed(temp_music) / GetMusicTimeLength(temp_music);
 
             if (timePlayed >= 0.999f) StopMusicStream(temp_music);
-            if(status_load != 6) {
-                framesCounterforLoad++;
-                //Every two seconds (120 frames) a new random value is generated
-                if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 1) {
-                    end_player_temp = end_player1;
-                    status_load = 2;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 2) {
-                    end_player_temp = end_player2;
-                    status_load = 3;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 3) {
-                    end_player_temp = end_player3;
-                    status_load = 4;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 4) {
-                    end_player_temp = end_player4;
-                    status_load = 5;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 5)
-                    status_load = 6;
-            }
+            UpdatePlayersEndWin(players_end);
         } else if (currentScreen == GAME_SCREEN_WIN) {
-            UpdateMusicStream(temp_music);
-            if (IsKeyPressed(KEY_P)) {
-                turn_music = !turn_music;
-
-                if (turn_music) SetMasterVolume(0);
-                else SetMasterVolume(volume);
-            }
-            if (IsKeyDown(KEY_MINUS) && volume > 0.0f) volume -= 0.1f;
-            else if (IsKeyDown(KEY_EQUAL) && volume < 1.0f) volume += 0.1f;
-            SetMusicVolume(temp_music, volume);
+            WorkMusic(temp_music);
             mousePoint = GetMousePosition();
             buttonRetry.isAction = false;
             buttonBack.isAction = false;
@@ -532,17 +469,13 @@ int main(void) {
 
             if (buttonRetry.isAction && button_status == 3)
             {
-                StopMusicStream(temp_music);
-                temp_music = WaitingMusic;
-                PlayMusicStream(temp_music);
+                ChangeMusic(WaitingMusic);
                 currentScreen = GAME_SCREEN_GAMEPLAY;
                 // TODO: Any desired action
             }
             else if (buttonBack.isAction && button_status == 4)
             {
-                StopMusicStream(temp_music);
-                temp_music = StartMusic;
-                PlayMusicStream(temp_music);
+                ChangeMusic(StartMusic);
                 currentScreen = GAME_SCREEN_START;
             }
             else if (buttonEndBack.isAction && button_status == 5)
@@ -574,29 +507,7 @@ int main(void) {
             timePlayed = GetMusicTimePlayed(temp_music) / GetMusicTimeLength(temp_music);
 
             if (timePlayed >= 0.989f) StopMusicStream(temp_music);
-            if(status_load != 6) {
-                framesCounterforLoad++;
-                //UpdateMusicStream(temp_music);
-                //Every two seconds (120 frames) a new random value is generated
-                if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 1) {
-                    win_player_temp = win_player1;
-                    status_load = 2;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 2) {
-                    win_player_temp = win_player2;
-                    status_load = 3;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 3) {
-                    win_player_temp = win_player3;
-                    status_load = 4;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 4) {
-                    win_player_temp = win_player4;
-                    status_load = 5;
-                    framesCounterforLoad = 0;
-                } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 5)
-                    status_load = 6;
-            }
+            UpdatePlayersEndWin(players_win);
         } else if (currentScreen == GAME_SCREEN_EXIT) {
             break;
         }
@@ -687,14 +598,14 @@ int main(void) {
             }
         } else if (currentScreen == GAME_SCREEN_ENDING) {
             DrawTexture(title_intro,0 , 0 , WHITE );
-            DrawTexture(end_player_temp, screenWidth/2 - end_player_temp.width/2 , screenHeight/2 - end_player_temp.height/2 + 103, WHITE);
+            DrawTexture(player_temp, screenWidth/2 - player_temp.width/2 , screenHeight/2 - player_temp.height/2 + 103, WHITE);
             DrawText(TextSubtext("Game Over", 0, lettersCount), GetScreenWidth()/2 - 250, GetScreenHeight()/2 - 200, 100, BLACK);
             DrawTextureRec(buttonRetryTexture, buttonRetry.textureRect, (Vector2){buttonRetry.rect.x, buttonRetry.rect.y}, WHITE);
             DrawTextureRec(buttonBackTexture, buttonBack.textureRect, (Vector2){buttonBack.rect.x, buttonBack.rect.y}, WHITE);
             DrawTextureRec(buttonEndBackTexture, buttonEndBack.textureRect, (Vector2){buttonEndBack.rect.x, buttonEndBack.rect.y}, WHITE);
         } else if (currentScreen == GAME_SCREEN_WIN) {
             DrawTexture(title_intro,0 , 0 , WHITE );
-            DrawTexture(win_player_temp, screenWidth/2 - win_player_temp.width/2 , screenHeight/2 - win_player_temp.height/2 + 103, WHITE);
+            DrawTexture(player_temp, screenWidth/2 - player_temp.width/2 , screenHeight/2 - player_temp.height/2 + 103, WHITE);
             DrawText(TextSubtext("You Win", 0, lettersCount), GetScreenWidth()/2 - 220, GetScreenHeight()/2 - 200, 100, BLACK);
             DrawTextureRec(buttonRetryTexture, buttonRetry.textureRect, (Vector2){buttonRetry.rect.x, buttonRetry.rect.y}, WHITE); // Draw button frame
             DrawTextureRec(buttonBackTexture, buttonBack.textureRect, (Vector2){buttonBack.rect.x, buttonBack.rect.y}, WHITE); // Draw button frame
@@ -730,6 +641,50 @@ int main(void) {
     CloseWindow();
 
     return 0;
+}
+
+void UpdatePlayersEndWin(Texture2D *players) {
+        if(status_load != 6) {
+            framesCounterforLoad++;
+            //Every two seconds (120 frames) a new random value is generated
+            if (status_load == 1) {
+                player_temp = players[0];
+                status_load = 2;
+                framesCounterforLoad = 0;
+            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 2) {
+                player_temp = players[1];
+                status_load = 3;
+                framesCounterforLoad = 0;
+            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 3) {
+                player_temp = players[2];
+                status_load = 4;
+                framesCounterforLoad = 0;
+            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 4) {
+                player_temp = players[3];
+                status_load = 5;
+                framesCounterforLoad = 0;
+            } else if (((framesCounterforLoad / 30) % 2) == 1 && status_load == 5)
+                status_load = 6;
+        }
+}
+
+void WorkMusic(Music temp_music) {
+    UpdateMusicStream(temp_music);
+    if (IsKeyPressed(KEY_M)) {
+        turn_music = !turn_music;
+
+        if (turn_music) SetMasterVolume(0);
+        else SetMasterVolume(volume);
+    }
+    if (IsKeyDown(KEY_MINUS) && volume > 0.0f) volume -= 0.1f;
+    else if (IsKeyDown(KEY_EQUAL) && volume < 1.0f) volume += 0.1f;
+    SetMusicVolume(temp_music, volume);
+}
+
+void ChangeMusic(Music music) {
+    StopMusicStream(temp_music);
+    temp_music = music;
+    PlayMusicStream(temp_music);
 }
 
 void InitGame() {
