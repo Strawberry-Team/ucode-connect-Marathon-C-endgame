@@ -19,7 +19,7 @@
 
 #define BUTTON_FRAMES 3
 
-#define TRIGGER_LENGTH 3
+#define TRIGGER_LENGTH 5
 #define ENV_ITEMS_LENGTH 19
 
 const int screenWidth = 800;
@@ -138,6 +138,12 @@ int main(void) {
     Vector2 mousePoint = {0.0f, 0.0f};
     int button_status = 0;
     int lettersCount = 0;
+
+
+    Texture2D stand = LoadTexture("resources/textures/stand.png");
+    Texture2D almaz = LoadTexture("resources/textures/almaz.png");
+    Texture2D flag = LoadTexture("resources/textures/flag.png");
+    Rectangle almazRec = { 450, 753, (float)almaz.width, (float)almaz.height};
 
     /**
      * INIT GAME
@@ -263,12 +269,18 @@ int main(void) {
                 if (isCollision && triggers[i].isActive) {
                     if (triggers[i].eventType == TRIGGER_TYPE_TAKE_TREASURE) {
                         triggers[i].isActive = false;
+                        player.canMove = true;
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_TAKE_TREASURE");
                     }
 
                     if (triggers[i].eventType == TRIGGER_TYPE_START_LAVA) {
                         lava.speed = LAVA_DEFAULT_SPEED;
                         triggers[i].isActive = false;
+
+                        StopMusicStream(temp_music);
+                        temp_music = MainMusic;
+                        PlayMusicStream(temp_music);
+
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_START_LAVA");
                     }
 
@@ -277,6 +289,23 @@ int main(void) {
                         lava.frameDelay = 15;
                         triggers[i].isActive = false;
                         TraceLog(LOG_INFO, "TRIGGER_TYPE_INCREASE_LAVA_SPEED");
+                    }
+
+                    if (triggers[i].eventType == TRIGGER_TYPE_LAVA_SHUTDOWN) {
+                        lava.speed = 0;
+                        triggers[i].isActive = false;
+                        TraceLog(LOG_INFO, "TRIGGER_TYPE_LAVA_SHUTDOWN");
+                    }
+
+                    if (triggers[i].eventType == TRIGGER_TYPE_END_FLAG) {
+                        triggers[i].isActive = false;
+                        currentScreen = GAME_SCREEN_WIN;
+
+                        StopMusicStream(temp_music);
+                        temp_music = Win;
+                        PlayMusicStream(temp_music);
+
+                        TraceLog(LOG_INFO, "TRIGGER_TYPE_END_FLAG");
                     }
                 }
             }
@@ -470,34 +499,26 @@ int main(void) {
             }
             else if (CheckCollisionPointRec(mousePoint, buttonBack.rect))
             {
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                {
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                     buttonBack.buttonState = BUTTON_STATE_PRESSED;
                 }
-                else
-                {
+                else {
                     buttonBack.buttonState = BUTTON_STATE_MOUSE_HOVER;
                 }
 
-                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-                {
+                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                     buttonBack.isAction = true;
                     button_status = 4;
                 }
             }
-            else if (CheckCollisionPointRec(mousePoint, buttonEndBack.rect))
-            {
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT))
-                {
+            else if (CheckCollisionPointRec(mousePoint, buttonEndBack.rect)) {
+                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT)) {
                     buttonEndBack.buttonState = BUTTON_STATE_PRESSED;
-                }
-                else
-                {
+                } else {
                     buttonEndBack.buttonState = BUTTON_STATE_MOUSE_HOVER;
                 }
 
-                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT))
-                {
+                if (IsMouseButtonReleased(MOUSE_BUTTON_LEFT)) {
                     buttonEndBack.isAction = true;
                     button_status = 5;
                 }
@@ -580,24 +601,7 @@ int main(void) {
             break;
         }
 
-        /*
-         * if (CheckCollisionRecs(lava, playerRect)) {
-                    StopMusicStream(temp_music);
-                    temp_music = GameOver;
-                    PlayMusicStream(temp_music);
-                    currentScreen = GAME_SCREEN_ENDING;
-                }
-                mousePoint = GetMousePosition();
-                if (IsMouseButtonDown(MOUSE_BUTTON_LEFT) ) {
-                    StopMusicStream(temp_music);
-                    temp_music = Win;
-                    PlayMusicStream(temp_music);
-                    currentScreen = GAME_SCREEN_WIN;
-                }*/
-
-        //TODO DRAW
-
-        /* GAME_SCREEN_START DRAWING */
+        /* START DRAWING */
         BeginDrawing();
         ClearBackground(BLANK);
 
@@ -644,6 +648,13 @@ int main(void) {
             //TODO: DELETE AFTER
             //DrawRectangleRec(player.frameRect, RED);
 
+            /* FLAG */
+            DrawTexture(flag,518, -505, WHITE);
+            /* STAND */
+            DrawTexture(stand,450, 753, WHITE);
+            /* ALMAZ */
+            DrawTexture(almaz,455, 733, WHITE);
+
             /* LAVA */
             DrawTexture(lava.texture2D, lava.rect.x, lava.rect.y, WHITE);
 
@@ -667,6 +678,13 @@ int main(void) {
             DrawTextureRec(player.texture2D, player.frameRect, (Vector2) { playerRect.x, playerRect.y}, WHITE);
 
             EndMode2D();
+
+            if (CheckCollisionRecs(almazRec, playerRect)) {
+                almaz.id = 0;
+                DrawText("Hooray, I found the treasure!\n"
+                         "Something is getting hot...",
+                         450, 450, 15, WHITE);
+            }
         } else if (currentScreen == GAME_SCREEN_ENDING) {
             DrawTexture(title_intro,0 , 0 , WHITE );
             DrawTexture(end_player_temp, screenWidth/2 - end_player_temp.width/2 , screenHeight/2 - end_player_temp.height/2 + 103, WHITE);
@@ -695,6 +713,10 @@ int main(void) {
     UnloadTexture(lava.texture2D);
     UnloadImage(lava.animatedImage);
 
+    UnloadTexture(flag);
+    UnloadTexture(stand);
+    UnloadTexture(almaz);
+
     UnloadTexture(player.texture2D);
     /* END UNLOAD TEXTURES */
 
@@ -713,15 +735,15 @@ int main(void) {
 void InitGame() {
 
     /* INIT LAVA */
-    lava.rect = (Rectangle) {0, screenHeight + 200, screenWidth, screenHeight + 200};
+    lava.rect = (Rectangle) {100, screenHeight + 200, screenWidth - 200, screenHeight - 100};
     lava.nextFrameDataOffset = 0;
     lava.frame = 0;
     lava.frameDelay = 20;
     lava.currentAnimFrameLava = 0;
-    lava.speed = 50;
+    lava.speed = 0;
     lava.speedMultiplier = 1;
     lava.animationFrames = 0;
-    lava.animatedImage = LoadImageAnim("resources/textures/lava.gif", &lava.animationFrames);
+    lava.animatedImage = LoadImageAnim("resources/textures/lava/lava2.gif", &lava.animationFrames);
     lava.texture2D = LoadTextureFromImage(lava.animatedImage);
     /* END LAVA */
 
@@ -740,6 +762,7 @@ void InitGame() {
 
     player.speed = 0;
     player.canJump = false;
+    player.canMove = false;
     player.playerStatus = PLAYER_STATUS_WAIT;
     /* END CHARACTER */
 
@@ -747,13 +770,15 @@ void InitGame() {
     camera.target = player.position;
     camera.offset = (Vector2){screenWidth / 2.0f, screenHeight / 2.0f};
     camera.rotation = 0.0f;
-    camera.zoom = 1.0f;
+    camera.zoom = 1.2f;
     /* END CAMERA */
 
     /* INIT TRIGGERS */
-    triggers[0] = (Trigger) {{(GetScreenWidth() / 2.0f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE};
-    triggers[1] = (Trigger) {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA};
-    triggers[2] = (Trigger) {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED};
+    triggers[0] = (Trigger) {{(GetScreenWidth() / 1.77f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE};
+    triggers[1] = (Trigger) {{(GetScreenWidth() / 1.5f), -430, 20, 50}, BLUE, true, TRIGGER_TYPE_END_FLAG};
+    triggers[2] = (Trigger) {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA};
+    triggers[3] = (Trigger) {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED};
+    triggers[4] = (Trigger) {{(0), -420, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_LAVA_SHUTDOWN};
     /* END TRIGGERS */
 
     /* INIT MAP */
@@ -821,7 +846,11 @@ void UpdatePlayer(Player *player, EnvItem *envItems, int envItemsLength, float d
         player->playerStatus = PLAYER_STATUS_WAIT;
     }
 
-    if (IsKeyPressed(KEY_SPACE) && player->canJump && player->jumpCounter < PLAYER_JUMP_LIMIT) {
+    if (IsKeyPressed(KEY_SPACE)
+        && player->canJump
+        && player->jumpCounter < PLAYER_JUMP_LIMIT
+        && player->canMove
+        ) {
         player->speed = player->jumpCounter >= 1
                 ? (-PLAYER_JUMP_SPD / PLAYER_ADDITIONAL_JUMP_SPD_REDUCER)
                 : (-PLAYER_JUMP_SPD);

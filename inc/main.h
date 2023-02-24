@@ -52,6 +52,7 @@ typedef struct Player {
     float speed;
     bool canJump;
     int jumpCounter;
+    bool canMove;
     PlayerStatus playerStatus;
 } Player;
 
@@ -88,7 +89,9 @@ typedef struct EnvItem {
 typedef enum {
     TRIGGER_TYPE_TAKE_TREASURE = 0,
     TRIGGER_TYPE_START_LAVA = 1,
-    TRIGGER_TYPE_INCREASE_LAVA_SPEED = 2
+    TRIGGER_TYPE_INCREASE_LAVA_SPEED = 2,
+    TRIGGER_TYPE_LAVA_SHUTDOWN = 3,
+    TRIGGER_TYPE_END_FLAG = 4
 } TriggerType;
 
 typedef struct Trigger {
