@@ -6,6 +6,32 @@
 #include <math.h>
 
 typedef enum {
+    BUTTON_STATE_NORMAL,
+    BUTTON_STATE_MOUSE_HOVER,
+    BUTTON_STATE_PRESSED
+} ButtonState;
+
+typedef struct Button {
+    Texture2D texture2D;
+    Rectangle rect;
+    Rectangle textureRect;
+
+    float frameHeight;
+
+    ButtonState buttonState;
+    bool isAction;
+} Button;
+
+
+typedef enum GameScreen {
+    GAME_SCREEN_START = 0,
+    GAME_SCREEN_GAMEPLAY,
+    GAME_SCREEN_ENDING,
+    GAME_SCREEN_WIN,
+    GAME_SCREEN_EXIT
+} GameScreen;
+
+typedef enum {
     PLAYER_STATUS_MOVE_LEFT = 0,
     PLAYER_STATUS_MOVE_RIGHT = 1,
     PLAYER_STATUS_MOVE_UP = 2,
