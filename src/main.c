@@ -712,11 +712,11 @@ void InitGame() {
     /* END CAMERA */
 
     /* INIT TRIGGERS */
-    triggers[0] = (Trigger) {{(GetScreenWidth() / 1.77f), 0, 20, GetScreenHeight()}, BLUE, true, TRIGGER_TYPE_TAKE_TREASURE};
-    triggers[1] = (Trigger) {{750, -6180, 20, 50}, BLUE, true, TRIGGER_TYPE_END_FLAG};
-    triggers[2] = (Trigger) {{(0), 400, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_START_LAVA};
-    triggers[3] = (Trigger) {{(0), 250, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED};
-    triggers[4] = (Trigger) {{(0), -6130, GetScreenWidth(), 20}, BLUE, true, TRIGGER_TYPE_LAVA_SHUTDOWN};
+    triggers[0] = (Trigger) {{(GetScreenWidth() / 1.77f), 0, 20, GetScreenHeight()}, BLANK, true, TRIGGER_TYPE_TAKE_TREASURE};
+    triggers[1] = (Trigger) {{750, -6180, 20, 50}, BLANK, true, TRIGGER_TYPE_END_FLAG};
+    triggers[2] = (Trigger) {{(0), 400, GetScreenWidth(), 20}, BLANK, true, TRIGGER_TYPE_START_LAVA};
+    triggers[3] = (Trigger) {{(0), 250, GetScreenWidth(), 20}, BLANK, true, TRIGGER_TYPE_INCREASE_LAVA_SPEED};
+    triggers[4] = (Trigger) {{(0), -6130, GetScreenWidth(), 20}, BLANK, true, TRIGGER_TYPE_LAVA_SHUTDOWN};
     /* END TRIGGERS */
 
     /* INIT OF THE MAP */
