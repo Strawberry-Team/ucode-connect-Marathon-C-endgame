@@ -48,6 +48,8 @@ static float volume = 0.5f;
 static bool turn_music = false;
 static Music temp_music;
 
+static Texture2D almaz;
+
 void InitGame();
 void UpdatePlayersEndWin(Texture2D *players);
 void WorkMusic(Music temp_music);
@@ -146,9 +148,8 @@ int main(void) {
     int button_status = 0;
     int lettersCount = 0;
 
-
+    Texture2D moveSetButtons = LoadTexture("resources/textures/buttons/move_set.png");
     Texture2D stand = LoadTexture("resources/textures/stand.png");
-    Texture2D almaz = LoadTexture("resources/textures/almaz.png");
     Texture2D flag = LoadTexture("resources/textures/flag.png");
     flag.width /= 1.5f;
     flag.height /= 1.5f;
@@ -521,20 +522,7 @@ int main(void) {
 
         if (currentScreen == GAME_SCREEN_START) {
             DrawTexture(start_title,0 , 0 , WHITE );
-            DrawText("START to start the game ",20, 10, 16, DARKBROWN );
-            DrawText("EXIT to close the game",20, 30, 16, DARKBROWN  );
-            DrawText("RETRY to try again",20, 50, 16, DARKBROWN  );
-            DrawText("BACK to return to the start screen",20, 70, 16, DARKBROWN  );
-            DrawText("P to mute the sound",20, 90, 16, DARKBROWN  );
-            DrawText("+ and - to turn the sound louder or quieter",20, 110, 16, DARKBROWN  );
-            DrawText("Character control:",20, 140, 16, DARKBROWN  );
-            DrawText("<- - move right",20, 160, 16, DARKBROWN  );
-            DrawText("-> - move left",20, 180, 16, DARKBROWN  );
-            DrawText("SPACE - jump up",20, 200, 16, DARKBROWN  );
-            DrawText("double SPACE - double jump up",20, 220, 16, DARKBROWN  );
-
             DrawText("Powered by:",20, 730, 20, BROWN );
-
             DrawText("Andrew Laskevych      Inessa Repeshko     Polina Skuratovets",20, 750, 20, BROWN );
             DrawText("Denys Kolesnychenko  Vadym Zharyi          Anton Lukash",20, 770, 20, BROWN );
             DrawTextureRec(buttonStartTexture, buttonStart.textureRect, (Vector2){buttonStart.rect.x, buttonStart.rect.y}, WHITE);
@@ -557,15 +545,14 @@ int main(void) {
                 }
             }
 
-            //TODO: DELETE AFTER
-            //DrawRectangleRec(player.frameRect, RED);
-
             /* FLAG */
             DrawTexture(flag,730, -6216, WHITE);
             /* STAND */
             DrawTexture(stand,450, 753, WHITE);
             /* ALMAZ */
             DrawTexture(almaz,455, 733, WHITE);
+            /* MOVE SET */
+            DrawTexture(moveSetButtons,110, 450, WHITE);
 
             /* LAVA */
             DrawTexture(lava.texture2D, lava.rect.x, lava.rect.y, WHITE);
@@ -738,6 +725,8 @@ void InitGame() {
     /* END TRIGGERS */
 
     /* INIT OF THE MAP */
+    almaz = LoadTexture("resources/textures/almaz.png");
+
     Texture2D staticBlock = LoadTexture("resources/textures/block_static.png");
     Texture2D crashingBlock1 = LoadTexture("resources/textures/block_crashing1.png");
     Texture2D crashingBlock2 = LoadTexture("resources/textures/block_crashing2.png");
