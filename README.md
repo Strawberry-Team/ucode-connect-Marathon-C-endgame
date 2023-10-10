@@ -4,9 +4,14 @@
             <a href="https://ucode.world/en/" target="_blank">
                 <img src="https://github.com/InessaRepeshko/ucode-connect-Marathon-C-endgame/blob/main/screens/ucode_it_academy_logo.svg" height="100px" alt="ucode_logo">
             </a>
-        </p><br />
-        <p align="center">ucode connect Endgame</p>
+        </p>
     </h1>
+    <h3>
+        <p align="center"><strong>ucode connect Endgame</strong></p>
+        <p align="center"><sub><i>ucode connect Endgame is the final stage of ucode connect the Marathon C programming bootcamp<br />
+            lasting 1 week (19.02.2023 - 26.02.2023), where the C programming language was used to develop the game.<br />
+            The purpose: create own game with a team.</i></sub></p>
+    </h3>
 </head>
 
 
