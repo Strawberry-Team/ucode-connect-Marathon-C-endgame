@@ -142,7 +142,7 @@ The level design is created in such a way that the player first learns to jump o
 
 <div align="center">
     <a href="https://www.youtube.com/watch?v=AaT908m4VOI" target="_blank">
-        <img src="https://img.youtube.com/vi/AaT908m4VOI/0.jpg" height="800px" alt="gameplay">
+        <img src="https://img.youtube.com/vi/AaT908m4VOI/0.jpg" height="700px" alt="gameplay">
     </a>
 </div><br />
 
