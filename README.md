@@ -2,7 +2,7 @@
     <h1>
         <p align="center">
             <a href="https://ucode.world/en/" target="_blank">
-                <img src="https://github.com/InessaRepeshko/InessaRepeshko/blob/main/ucode/ucode_it_academy_logo.svg" height="100px" alt="ucode_logo">
+                <img src="https://github.com/InessaRepeshko/ucode-connect-Marathon-C-endgame/blob/main/screens/ucode_it_academy_logo.svg" height="100px" alt="ucode_logo">
             </a>
         </p><br />
         <p align="center">ucode connect Endgame</p>
