@@ -154,17 +154,7 @@ The level design is created in such a way that the player first learns to jump o
 
 
 # Presentation
-
-<div align="center">
-    <img src="https://github.com/InessaRepeshko/ucode-connect-Marathon-C-endgame/blob/main/screens/Endgame_by_PAVIDA_GAMES.pdf" alt="presentation">
-</div><br />
-
-
-
-# Presentation
-<div align="center">
-    <iframe src="https://github.com/InessaRepeshko/ucode-connect-Marathon-C-endgame/blob/main/screens/Endgame_by_PAVIDA_GAMES.pdf" width="720" height="405" frameBorder="0" alt="presentation" allowFullScreen></iframe>
-</div><br />
+Here is a [link](https://github.com/InessaRepeshko/ucode-connect-Marathon-C-endgame/blob/main/screens/Endgame_by_PAVIDA_GAMES.pdf) to the presentation file.</p>
 
 
 
